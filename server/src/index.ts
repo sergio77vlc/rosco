@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
@@ -11,7 +12,8 @@ import { registerSocketHandlers } from './socketHandlers.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 4000;
-const isProd = process.env.NODE_ENV === 'production';
+const clientDist = path.join(__dirname, '../../client/dist');
+const hasClientBuild = existsSync(path.join(clientDist, 'index.html'));
 
 const app = express();
 app.use(cors());
@@ -41,12 +43,15 @@ app.post('/api/rosco/generate', async (req, res) => {
   }
 });
 
-if (isProd) {
-  const clientDist = path.join(__dirname, '../../client/dist');
+if (hasClientBuild) {
   app.use(express.static(clientDist));
   app.get('*', (_req, res) => {
     res.sendFile(path.join(clientDist, 'index.html'));
   });
+} else {
+  console.warn(
+    'Aviso: no se encontró client/dist. Ejecuta "npm run build" antes de "npm start" para servir la web.',
+  );
 }
 
 const httpServer = createServer(app);
@@ -59,5 +64,7 @@ io.on('connection', (socket) => {
 });
 
 httpServer.listen(PORT, () => {
-  console.log(`Servidor Rosco escuchando en el puerto ${PORT} (${isProd ? 'producción' : 'desarrollo'})`);
+  console.log(
+    `Servidor Rosco escuchando en el puerto ${PORT}${hasClientBuild ? ' (sirviendo cliente compilado)' : ''}`,
+  );
 });
