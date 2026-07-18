@@ -1,0 +1,20 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+
+export default function Home() {
+  const navigate = useNavigate();
+  return (
+    <div className="screen screen-center">
+      <h1 className="app-title">🎯 Rosco Multijugador</h1>
+      <p className="app-subtitle">El clásico juego de Pasapalabra, con tus amigos y sus móviles.</p>
+      <div className="home-actions">
+        <button className="btn btn-primary btn-big" onClick={() => navigate('/host')}>
+          Hospedar partida
+        </button>
+        <button className="btn btn-secondary btn-big" onClick={() => navigate('/join')}>
+          Unirse a una partida
+        </button>
+      </div>
+    </div>
+  );
+}
