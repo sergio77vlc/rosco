@@ -13,7 +13,7 @@ Juego web multijugador tipo "Pasapalabra" (rosco). Un dispositivo hospeda la par
 - Lectura de la pista en voz alta (TTS) con velocidad ajustable y opción de lectura automática al cambiar de letra.
 - Respuesta por voz: un botón de micrófono dicta la respuesta directamente al campo de texto (reconocimiento de voz del navegador).
 - El anfitrión ve **todos los roscos de todos los jugadores en tiempo real**, en la misma pantalla, con cronómetro y ranking en vivo.
-- **Modo local ("Jugar en este dispositivo")**: hasta 6 jugadores se turnan en el mismo móvil o pantalla, sin necesidad de red ni de otros dispositivos — cada uno juega su rosco y luego pasa el dispositivo al siguiente, con una pantalla de "cambio de turno" entre jugador y jugador.
+- **Modo local ("Jugar en este dispositivo")**: hasta 6 jugadores se turnan en el mismo móvil o pantalla, sin necesidad de red ni de otros dispositivos. Cada jugador tiene su propio rosco, pero solo uno responde a la vez: si acierta, sigue él; si falla o pasa palabra, el turno pasa automáticamente al siguiente. Un indicador de turno y un marcador con todos los jugadores están siempre visibles en pantalla.
 - Resultados finales con ranking (aciertos, fallos y tiempo).
 
 ## Arquitectura

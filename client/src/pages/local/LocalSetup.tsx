@@ -54,8 +54,9 @@ export default function LocalSetup() {
     <div className="screen">
       <h1 className="screen-title">Jugar en este dispositivo</h1>
       <p className="app-subtitle">
-        Turnos por orden en el mismo móvil o pantalla: cada jugador juega su rosco y luego pasa el
-        dispositivo al siguiente.
+        Os turnáis en el mismo móvil o pantalla: cada jugador tiene su propio rosco, pero solo
+        responde uno a la vez. Si acierta sigue él; si falla o pasa palabra, el turno pasa al
+        siguiente jugador.
       </p>
 
       <section className="setup-section">
@@ -104,7 +105,7 @@ export default function LocalSetup() {
       </section>
 
       <section className="setup-section">
-        <h2>Duración del turno de cada jugador</h2>
+        <h2>Duración de la partida</h2>
         <div className="pill-row">
           {TIMER_OPTIONS.map((opt) => (
             <button

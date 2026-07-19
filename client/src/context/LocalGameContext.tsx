@@ -11,20 +11,19 @@ export interface LocalPlayerState {
   finishedAt: number | null;
 }
 
-export type LocalPhase = 'handoff' | 'playing' | 'results';
+export type LocalPhase = 'playing' | 'results';
 
 interface LocalGameState {
   rosco: Rosco | null;
   timerSeconds: number;
   players: LocalPlayerState[];
-  currentPlayerIndex: number;
+  activePlayerIndex: number;
   phase: LocalPhase;
-  currentEndsAt: number | null;
+  endsAt: number | null;
 }
 
 type LocalGameAction =
   | { type: 'START_GAME'; rosco: Rosco; timerSeconds: number; players: { name: string; color: string }[] }
-  | { type: 'BEGIN_TURN' }
   | { type: 'RESOLVE'; resolution: 'correct' | 'wrong' | 'passed' }
   | { type: 'TIME_UP' }
   | { type: 'RESET' };
@@ -33,17 +32,19 @@ const initialState: LocalGameState = {
   rosco: null,
   timerSeconds: 120,
   players: [],
-  currentPlayerIndex: 0,
-  phase: 'handoff',
-  currentEndsAt: null,
+  activePlayerIndex: 0,
+  phase: 'playing',
+  endsAt: null,
 };
 
-function advancePhase(state: LocalGameState): LocalGameState {
-  const nextIndex = state.currentPlayerIndex + 1;
-  if (nextIndex >= state.players.length) {
-    return { ...state, phase: 'results', currentEndsAt: null };
+/** Siguiente jugador (dando la vuelta) que todavía no ha terminado su rosco entero. Null si no queda ninguno. */
+function nextActivePlayerIndex(players: LocalPlayerState[], fromIndex: number): number | null {
+  const n = players.length;
+  for (let step = 1; step <= n; step++) {
+    const idx = (fromIndex + step) % n;
+    if (!players[idx].finishedAt) return idx;
   }
-  return { ...state, currentPlayerIndex: nextIndex, phase: 'handoff', currentEndsAt: null };
+  return null;
 }
 
 function localGameReducer(state: LocalGameState, action: LocalGameAction): LocalGameState {
@@ -61,15 +62,13 @@ function localGameReducer(state: LocalGameState, action: LocalGameAction): Local
         rosco: action.rosco,
         timerSeconds: action.timerSeconds,
         players,
-        currentPlayerIndex: 0,
-        phase: 'handoff',
-        currentEndsAt: null,
+        activePlayerIndex: 0,
+        phase: 'playing',
+        endsAt: Date.now() + action.timerSeconds * 1000,
       };
     }
-    case 'BEGIN_TURN':
-      return { ...state, phase: 'playing', currentEndsAt: Date.now() + state.timerSeconds * 1000 };
     case 'RESOLVE': {
-      const player = state.players[state.currentPlayerIndex];
+      const player = state.players[state.activePlayerIndex];
       if (!player || player.finishedAt) return state;
       const result = resolveCurrentLetter(player.progress, player.currentIndex, action.resolution);
       const updatedPlayer: LocalPlayerState = {
@@ -78,18 +77,22 @@ function localGameReducer(state: LocalGameState, action: LocalGameAction): Local
         currentIndex: result.currentIndex,
         finishedAt: result.finished ? Date.now() : null,
       };
-      const players = state.players.map((p, i) => (i === state.currentPlayerIndex ? updatedPlayer : p));
-      const nextState = { ...state, players };
-      return result.finished ? advancePhase(nextState) : nextState;
+      const players = state.players.map((p, i) => (i === state.activePlayerIndex ? updatedPlayer : p));
+
+      // Un acierto conserva el turno (salvo que ya no le queden letras); un fallo o un
+      // pasapalabra siempre cede el turno al siguiente jugador, como en el rosco real.
+      const keepsTurn = action.resolution === 'correct' && !result.finished;
+      if (keepsTurn) {
+        return { ...state, players };
+      }
+      const nextIdx = nextActivePlayerIndex(players, state.activePlayerIndex);
+      if (nextIdx === null) {
+        return { ...state, players, phase: 'results', endsAt: null };
+      }
+      return { ...state, players, activePlayerIndex: nextIdx };
     }
-    case 'TIME_UP': {
-      const player = state.players[state.currentPlayerIndex];
-      if (!player || player.finishedAt) return state;
-      const players = state.players.map((p, i) =>
-        i === state.currentPlayerIndex ? { ...p, finishedAt: Date.now() } : p,
-      );
-      return advancePhase({ ...state, players });
-    }
+    case 'TIME_UP':
+      return { ...state, phase: 'results', endsAt: null };
     case 'RESET':
       return initialState;
     default:
@@ -99,7 +102,6 @@ function localGameReducer(state: LocalGameState, action: LocalGameAction): Local
 
 interface LocalGameContextValue extends LocalGameState {
   startGame: (rosco: Rosco, timerSeconds: number, players: { name: string; color: string }[]) => void;
-  beginCurrentTurn: () => void;
   submitAnswer: (answerText: string) => void;
   pass: () => void;
   resetGame: () => void;
@@ -116,25 +118,21 @@ export function LocalGameProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    if (state.phase === 'playing' && state.currentEndsAt) {
-      const delay = Math.max(0, state.currentEndsAt - Date.now());
+    if (state.phase === 'playing' && state.endsAt) {
+      const delay = Math.max(0, state.endsAt - Date.now());
       timeoutRef.current = setTimeout(() => dispatch({ type: 'TIME_UP' }), delay);
     }
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [state.phase, state.currentEndsAt]);
+  }, [state.phase, state.endsAt]);
 
   function startGame(rosco: Rosco, timerSeconds: number, players: { name: string; color: string }[]) {
     dispatch({ type: 'START_GAME', rosco, timerSeconds, players });
   }
 
-  function beginCurrentTurn() {
-    dispatch({ type: 'BEGIN_TURN' });
-  }
-
   function submitAnswer(answerText: string) {
-    const player = state.players[state.currentPlayerIndex];
+    const player = state.players[state.activePlayerIndex];
     if (!state.rosco || !player || player.finishedAt) return;
     const clue = state.rosco.letters[player.currentIndex];
     const correct = isAnswerCorrect(answerText, clue.answer);
@@ -142,7 +140,7 @@ export function LocalGameProvider({ children }: { children: React.ReactNode }) {
   }
 
   function pass() {
-    const player = state.players[state.currentPlayerIndex];
+    const player = state.players[state.activePlayerIndex];
     if (!player || player.finishedAt) return;
     dispatch({ type: 'RESOLVE', resolution: 'passed' });
   }
@@ -152,7 +150,7 @@ export function LocalGameProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <LocalGameContext.Provider value={{ ...state, startGame, beginCurrentTurn, submitAnswer, pass, resetGame }}>
+    <LocalGameContext.Provider value={{ ...state, startGame, submitAnswer, pass, resetGame }}>
       {children}
     </LocalGameContext.Provider>
   );
