@@ -7,7 +7,7 @@ Juego web multijugador tipo "Pasapalabra" (rosco). Un dispositivo hospeda la par
 - Pantalla inicial: **hospedar partida** o **unirse escaneando un QR**.
 - Configuración del anfitrión: número de jugadores (1-6), duración del cronómetro y elección del rosco.
 - La partida arranca automáticamente en cuanto se llena el aforo de jugadores, sin esperar a que el anfitrión pulse nada. Si eliges 1 jugador, no hay ni pantalla de anfitrión ni QR: el mismo dispositivo pasa directo a jugar.
-- Roscos predefinidos: 8 roscos completos (25 pistas cada uno) organizados por dificultad (fácil/medio/difícil) y tema (general, animales, cine, geografía, ciencia, historia, deportes, cultura general).
+- Roscos predefinidos: 60 roscos completos (25 pistas cada uno, 1.500 pistas en total), organizados por dificultad (fácil/medio/difícil) y tema — 30 de cultura general (10 por cada nivel de dificultad) y al menos 5 en cada categoría temática: animales, cine, geografía, ciencia, historia y deportes.
 - Generación de roscos completos mediante prompt con IA (API de Anthropic/Claude), a partir de un tema y una dificultad.
 - Cada jugador juega desde su móvil: ve su rosco, la pista activa, y puede responder o pasar (pasapalabra).
 - Lectura de la pista en voz alta (TTS) con velocidad ajustable y opción de lectura automática al cambiar de letra.
@@ -175,7 +175,9 @@ shared/src/types.ts         Tipos compartidos (Rosco, Room, Player, eventos de S
 shared/src/roscoLetters.ts  Alfabeto del rosco (25 letras) y reglas de "empieza por" / "contiene"
 shared/src/answerCheck.ts   Normalización y comparación de respuestas
 
-server/src/roscos/presets.ts  Banco de 8 roscos predefinidos
+server/src/roscos/builder.ts        Helper buildRosco() con validación de reglas de letra
+server/src/roscos/presets.ts        Junta todos los roscos predefinidos por categoría
+server/src/roscos/data/*.ts         Banco de 60 roscos predefinidos, un fichero por categoría/tanda
 server/src/ai/generateRosco.ts Generación de roscos con la API de Anthropic
 server/src/gameEngine.ts      Motor del juego: turnos, pasapalabra, corrección, ranking
 server/src/socketHandlers.ts  Eventos de Socket.IO (host y jugadores)
