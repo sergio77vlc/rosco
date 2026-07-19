@@ -165,6 +165,13 @@ export default function PlayerGame() {
                 />
                 Leer pistas automáticamente
               </label>
+              {tts.silentWarning && (
+                <p className="tts-warning">
+                  No se ha oído el audio. Tu navegador puede no tener voces de síntesis instaladas
+                  (ocurre a veces en Brave/Linux) — prueba a bajar el nivel de "Shields" del sitio en
+                  Brave, usar Chrome, o jugar desde el móvil.
+                </p>
+              )}
             </div>
           )}
 

@@ -3,11 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PLAYER_COLORS } from '@rosco/shared';
 import PlayerBadge from '../../components/PlayerBadge';
 import { useGame } from '../../context/GameContext';
+import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
 
 export default function JoinLobby() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { room, playerId, setPlayerId, emitWithAck } = useGame();
+  const tts = useSpeechSynthesis();
 
   const [name, setName] = useState('');
   const [color, setColor] = useState<string>(PLAYER_COLORS[0]);
@@ -23,6 +25,7 @@ export default function JoinLobby() {
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
     if (!code) return;
+    tts.prime();
     setJoining(true);
     setError(null);
     try {

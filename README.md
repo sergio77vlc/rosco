@@ -66,6 +66,90 @@ Para jugar con varios móviles en la misma red WiFi:
 
 Para desplegarlo en un servidor con dominio público, el QR generado usará automáticamente esa URL pública.
 
+## Desplegar con HTTPS y dominio propio (recomendado)
+
+La cámara (para escanear el QR) y el micrófono (para dictar respuestas) **solo funcionan en HTTPS** — los navegadores los bloquean por completo en HTTP salvo en `localhost`. Si tienes un dominio (por ejemplo comprado en Nominalia) y un VPS, esta es la forma recomendada de servir la app:
+
+### 1. Apunta el dominio al VPS
+
+En el panel de DNS de Nominalia (o donde gestiones el DNS de tu dominio), añade:
+
+| Tipo | Nombre | Valor              |
+|------|--------|---------------------|
+| A    | @      | `<IP de tu VPS>`    |
+| A    | www    | `<IP de tu VPS>`    |
+
+La propagación puede tardar desde minutos hasta un par de horas. Puedes comprobarlo con `dig tudominio.es` o `nslookup tudominio.es`.
+
+### 2. Instala Nginx y Certbot en el VPS
+
+```bash
+sudo apt update
+sudo apt install nginx certbot python3-certbot-nginx
+```
+
+### 3. Configura Nginx como proxy inverso
+
+Crea `/etc/nginx/sites-available/rosco`:
+
+```nginx
+server {
+    listen 80;
+    server_name tudominio.es www.tudominio.es;
+
+    location / {
+        proxy_pass http://127.0.0.1:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+(Las cabeceras `Upgrade`/`Connection` son imprescindibles para que Socket.IO funcione a través del proxy).
+
+```bash
+sudo ln -s /etc/nginx/sites-available/rosco /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### 4. Pide el certificado HTTPS
+
+```bash
+sudo certbot --nginx -d tudominio.es -d www.tudominio.es
+```
+
+Certbot modifica automáticamente la configuración de Nginx para servir HTTPS y redirigir HTTP → HTTPS (elige esa opción cuando lo pregunte), y programa la renovación automática del certificado. Puedes comprobar que la renovación funciona con:
+
+```bash
+sudo certbot renew --dry-run
+```
+
+### 5. Arranca el servidor solo en localhost y con firewall
+
+Como ahora Nginx es quien atiende las peticiones públicas (puertos 80/443), el proceso Node no necesita estar expuesto directamente:
+
+```bash
+HOST=127.0.0.1 PORT=4000 pm2 start npm --name rosco -- start
+pm2 save
+```
+
+```bash
+sudo ufw allow 'Nginx Full'   # abre 80 y 443
+sudo ufw allow OpenSSH
+sudo ufw deny 4000            # si lo tenías abierto directamente, ciérralo
+sudo ufw enable
+```
+
+### 6. Verifica
+
+Abre `https://tudominio.es` — deberías ver el candado de "conexión segura". A partir de aquí, el QR generado en la sala de espera ya apuntará a esa URL HTTPS automáticamente, y tanto la cámara (escanear QR) como el micrófono (responder por voz) pedirán permiso y funcionarán con normalidad.
+
 ## Generación de roscos con IA
 
 Para habilitar la creación de roscos completos a partir de un prompt, define la variable de entorno `ANTHROPIC_API_KEY` en el entorno donde corre `server`:
@@ -79,6 +163,7 @@ Si no está configurada, el resto de la aplicación funciona con normalidad; sol
 Variables de entorno opcionales:
 
 - `PORT` — puerto del servidor (por defecto `4000`).
+- `HOST` — interfaz de red en la que escucha (por defecto `0.0.0.0`); usa `127.0.0.1` cuando pongas Nginx delante como proxy inverso.
 - `ANTHROPIC_API_KEY` — habilita la generación de roscos por IA.
 - `ROSCO_AI_MODEL` — modelo de Anthropic a usar (por defecto `claude-sonnet-5`).
 
@@ -108,3 +193,4 @@ client/src/hooks/useSpeechRecognition.ts Dictado de la respuesta por micrófono 
 - El anfitrión debe mantener la pestaña abierta durante toda la partida (no hay reconexión automática de la sesión del anfitrión tras recargar la página).
 - Si un jugador se desconecta, su progreso se conserva pero deberá volver a entrar por su cuenta; no hay reconexión automática con la misma sesión.
 - La lectura en voz alta y el dictado por micrófono usan las APIs nativas del navegador (Web Speech API), sin coste ni configuración adicional. El reconocimiento de voz solo está disponible en navegadores compatibles (Chrome/Android funcionan bien; Safari/iOS no lo soporta) y, como el acceso al micrófono, requiere que la web se sirva por HTTPS.
+- La lectura en voz alta depende de que el sistema operativo/navegador tenga voces de síntesis instaladas. En Linux de escritorio (Chrome/Brave/Chromium) suele no haber ninguna por defecto, y Brave además puede bloquear la lista de voces con su protección "Shields" contra fingerprinting — en ambos casos la app avisa en pantalla si no consigue reproducir audio. En Android e iOS las voces vienen instaladas de serie y funciona sin configuración adicional.

@@ -12,6 +12,7 @@ import { registerSocketHandlers } from './socketHandlers.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 4000;
+const HOST = process.env.HOST || '0.0.0.0';
 const clientDist = path.join(__dirname, '../../client/dist');
 const hasClientBuild = existsSync(path.join(clientDist, 'index.html'));
 
@@ -63,8 +64,8 @@ io.on('connection', (socket) => {
   registerSocketHandlers(io, socket);
 });
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, HOST, () => {
   console.log(
-    `Servidor Rosco escuchando en el puerto ${PORT}${hasClientBuild ? ' (sirviendo cliente compilado)' : ''}`,
+    `Servidor Rosco escuchando en ${HOST}:${PORT}${hasClientBuild ? ' (sirviendo cliente compilado)' : ''}`,
   );
 });
