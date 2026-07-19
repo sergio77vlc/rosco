@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import RoscoWheel from '../../components/RoscoWheel';
 import Timer from '../../components/Timer';
 import { useGame } from '../../context/GameContext';
+import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
+import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 import { getSocket } from '../../socket';
 import { rankPlayers } from '../../utils/rank';
 
@@ -15,6 +17,10 @@ export default function PlayerGame() {
   const [flash, setFlash] = useState<'correct' | 'wrong' | null>(null);
   const pendingIndexRef = useRef<number | null>(null);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSpokenIndexRef = useRef<number | null>(null);
+
+  const tts = useSpeechSynthesis();
+  const speech = useSpeechRecognition((text) => setAnswerText(text));
 
   const player = room?.players.find((p) => p.id === playerId);
 
@@ -35,7 +41,21 @@ export default function PlayerGame() {
     }
   }, [player]);
 
-  if (!room || !player || !code) {
+  const currentLetter = room && player ? room.rosco.letters[player.currentIndex] : null;
+  const finished = Boolean(player?.finishedAt);
+
+  useEffect(() => {
+    if (!player || !currentLetter || finished) return;
+    if (lastSpokenIndexRef.current === player.currentIndex) return;
+    lastSpokenIndexRef.current = player.currentIndex;
+    speech.stop();
+    if (tts.supported && tts.autoRead) {
+      tts.speak(currentLetter.clue);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player?.currentIndex, finished]);
+
+  if (!room || !player || !code || !currentLetter) {
     return (
       <div className="screen screen-center">
         <p className="app-subtitle">Cargando partida...</p>
@@ -69,11 +89,9 @@ export default function PlayerGame() {
     );
   }
 
-  const currentLetter = room.rosco.letters[player.currentIndex];
-  const finished = Boolean(player.finishedAt);
-
   function submit() {
     if (!answerText.trim() || finished) return;
+    speech.stop();
     pendingIndexRef.current = player!.currentIndex;
     getSocket().emit('player:submitAnswer', { code, answerText: answerText.trim() });
     setAnswerText('');
@@ -81,7 +99,18 @@ export default function PlayerGame() {
 
   function pass() {
     if (finished) return;
+    speech.stop();
     getSocket().emit('player:pass', { code });
+  }
+
+  function toggleMic() {
+    if (speech.listening) {
+      speech.stop();
+    } else {
+      tts.stop();
+      setAnswerText('');
+      speech.start();
+    }
   }
 
   return (
@@ -93,10 +122,52 @@ export default function PlayerGame() {
         <p className="app-subtitle">¡Has terminado tu rosco! Esperando a los demás...</p>
       ) : (
         <>
-          <div className={`clue-card ${flash === 'correct' ? 'clue-card-correct' : ''} ${flash === 'wrong' ? 'clue-card-wrong' : ''}`}>
-            <span className="clue-letter">{currentLetter.letter}</span>
+          <div
+            className={`clue-card ${flash === 'correct' ? 'clue-card-correct' : ''} ${
+              flash === 'wrong' ? 'clue-card-wrong' : ''
+            }`}
+          >
+            <div className="clue-card-top">
+              <span className="clue-letter">{currentLetter.letter}</span>
+              {tts.supported && (
+                <button
+                  type="button"
+                  className={`btn-icon-flat ${tts.speaking ? 'btn-icon-flat-active' : ''}`}
+                  onClick={() => (tts.speaking ? tts.stop() : tts.speak(currentLetter.clue))}
+                  aria-label="Escuchar pista"
+                  title="Escuchar pista"
+                >
+                  {tts.speaking ? '⏸️' : '🔊'}
+                </button>
+              )}
+            </div>
             <p className="clue-text">{currentLetter.clue}</p>
           </div>
+
+          {tts.supported && (
+            <div className="tts-settings">
+              <label className="tts-rate-label">
+                Velocidad de lectura: {tts.rate.toFixed(2)}x
+                <input
+                  type="range"
+                  min={tts.MIN_RATE}
+                  max={tts.MAX_RATE}
+                  step={0.25}
+                  value={tts.rate}
+                  onChange={(e) => tts.setRate(Number(e.target.value))}
+                />
+              </label>
+              <label className="tts-auto-label">
+                <input
+                  type="checkbox"
+                  checked={tts.autoRead}
+                  onChange={(e) => tts.setAutoRead(e.target.checked)}
+                />
+                Leer pistas automáticamente
+              </label>
+            </div>
+          )}
+
           <form
             className="answer-form"
             onSubmit={(e) => {
@@ -104,14 +175,27 @@ export default function PlayerGame() {
               submit();
             }}
           >
-            <input
-              type="text"
-              value={answerText}
-              onChange={(e) => setAnswerText(e.target.value)}
-              placeholder="Tu respuesta..."
-              autoFocus
-              autoComplete="off"
-            />
+            <div className="answer-input-row">
+              <input
+                type="text"
+                value={answerText}
+                onChange={(e) => setAnswerText(e.target.value)}
+                placeholder={speech.listening ? 'Escuchando...' : 'Tu respuesta...'}
+                autoFocus
+                autoComplete="off"
+              />
+              {speech.supported && (
+                <button
+                  type="button"
+                  className={`mic-button ${speech.listening ? 'mic-button-active' : ''}`}
+                  onClick={toggleMic}
+                  aria-label="Responder por voz"
+                  title="Responder por voz"
+                >
+                  🎤
+                </button>
+              )}
+            </div>
             <div className="answer-buttons">
               <button className="btn btn-secondary" type="button" onClick={pass}>
                 Pasapalabra
