@@ -220,34 +220,10 @@ button {
   color: white;
 }
 
-.preset-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.preset-card {
-  text-align: left;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  padding: 12px;
-  color: var(--text);
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.preset-card span {
+.preset-picker-hint {
   color: var(--text-dim);
   font-size: 0.85rem;
-}
-
-.preset-card-active {
-  border-color: var(--accent);
-  background: rgba(250, 204, 21, 0.12);
+  margin: 4px 0 0;
 }
 
 .category-grid {
