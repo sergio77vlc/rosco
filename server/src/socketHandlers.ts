@@ -71,6 +71,15 @@ function maybeAutoFinish(io: Server, room: ServerRoom): void {
   }
 }
 
+function startGame(io: Server, room: ServerRoom): void {
+  room.status = 'playing';
+  room.startedAt = Date.now();
+  room.endsAt = room.startedAt + room.timerSeconds * 1000;
+  room.finishTimeout = setTimeout(() => finishRoom(io, room), room.timerSeconds * 1000);
+  broadcastRoomState(io, room);
+  io.to(room.code).emit('game:started', { startedAt: room.startedAt, endsAt: room.endsAt });
+}
+
 export function registerSocketHandlers(io: Server, socket: Socket): void {
   socket.on('host:createRoom', (payload: HostCreateRoomPayload, ack?: (res: any) => void) => {
     try {
@@ -112,17 +121,16 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
       ack?.({ ok: false, reason: 'Sala no encontrada.' });
       return;
     }
+    if (room.status !== 'lobby') {
+      ack?.({ ok: false, reason: 'La partida ya ha comenzado.' });
+      return;
+    }
     if (room.players.size < 1) {
       ack?.({ ok: false, reason: 'Necesitas al menos un jugador para empezar.' });
       return;
     }
-    room.status = 'playing';
-    room.startedAt = Date.now();
-    room.endsAt = room.startedAt + room.timerSeconds * 1000;
-    room.finishTimeout = setTimeout(() => finishRoom(io, room), room.timerSeconds * 1000);
+    startGame(io, room);
     ack?.({ ok: true });
-    broadcastRoomState(io, room);
-    io.to(room.code).emit('game:started', { startedAt: room.startedAt, endsAt: room.endsAt });
   });
 
   socket.on('player:joinRoom', (payload: PlayerJoinRoomPayload, ack?: (res: any) => void) => {
@@ -144,7 +152,13 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
     room.players.set(player.id, player);
     socket.join(room.code);
     ack?.({ ok: true, playerId: player.id, room: toPublicRoom(room) });
-    broadcastRoomState(io, room);
+
+    if (room.players.size >= room.maxPlayers) {
+      // La sala se ha llenado (incluye el caso de partidas de 1 jugador): empieza sin esperar al anfitrión.
+      startGame(io, room);
+    } else {
+      broadcastRoomState(io, room);
+    }
   });
 
   socket.on('player:submitAnswer', (payload: PlayerSubmitAnswerPayload) => {
@@ -171,10 +185,14 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
     const playerRoom = findRoomByPlayerSocket(socket.id);
     if (playerRoom) {
       const player = Array.from(playerRoom.players.values()).find((p) => p.socketId === socket.id);
-      if (player) {
-        player.connected = false;
-        broadcastRoomState(io, playerRoom);
+      if (player) player.connected = false;
+      if (playerRoom.hostSocketId === socket.id) {
+        // Partida en solitario: el mismo dispositivo es anfitrión y jugador. Al salir, se cierra la sala.
+        io.to(playerRoom.code).emit('room:error', { reason: 'El anfitrión ha cerrado la partida.' });
+        deleteRoom(playerRoom.code);
+        return;
       }
+      broadcastRoomState(io, playerRoom);
       return;
     }
     const hostRoom = findRoomByHostSocket(socket.id);

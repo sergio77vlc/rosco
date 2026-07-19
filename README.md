@@ -6,6 +6,7 @@ Juego web multijugador tipo "Pasapalabra" (rosco). Un dispositivo hospeda la par
 
 - Pantalla inicial: **hospedar partida** o **unirse escaneando un QR**.
 - Configuración del anfitrión: número de jugadores (1-6), duración del cronómetro y elección del rosco.
+- La partida arranca automáticamente en cuanto se llena el aforo de jugadores, sin esperar a que el anfitrión pulse nada. Si eliges 1 jugador, no hay ni pantalla de anfitrión ni QR: el mismo dispositivo pasa directo a jugar.
 - Roscos predefinidos: 8 roscos completos (25 pistas cada uno) organizados por dificultad (fácil/medio/difícil) y tema (general, animales, cine, geografía, ciencia, historia, deportes, cultura general).
 - Generación de roscos completos mediante prompt con IA (API de Anthropic/Claude), a partir de un tema y una dificultad.
 - Cada jugador juega desde su móvil: ve su rosco, la pista activa, y puede responder o pasar (pasapalabra).

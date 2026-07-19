@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Difficulty, Rosco } from '@rosco/shared';
+import { PLAYER_COLORS, type Difficulty, type Rosco } from '@rosco/shared';
 import { useGame } from '../../context/GameContext';
 
 const TIMER_OPTIONS = [
@@ -18,11 +18,14 @@ const DIFFICULTY_LABELS: Record<Difficulty, string> = {
 
 export default function HostSetup() {
   const navigate = useNavigate();
-  const { emitWithAck } = useGame();
+  const { emitWithAck, setPlayerId } = useGame();
 
   const [maxPlayers, setMaxPlayers] = useState(4);
   const [timerSeconds, setTimerSeconds] = useState(120);
   const [tab, setTab] = useState<'preset' | 'ai'>('preset');
+  const [soloName, setSoloName] = useState('');
+  const [soloColor, setSoloColor] = useState<string>(PLAYER_COLORS[0]);
+  const isSolo = maxPlayers === 1;
 
   const [presets, setPresets] = useState<Rosco[]>([]);
   const [presetsError, setPresetsError] = useState<string | null>(null);
@@ -81,7 +84,19 @@ export default function HostSetup() {
         rosco: selectedRosco,
         timerSeconds,
       });
-      navigate(`/host/${res.code}`);
+      if (isSolo) {
+        // Con un solo jugador no hace falta pantalla de anfitrión/QR: este mismo dispositivo
+        // se une directamente como jugador y la partida arranca sin esperar a nadie.
+        const joinRes = await emitWithAck<{ ok: true; playerId: string }>('player:joinRoom', {
+          code: res.code,
+          name: soloName.trim() || 'Jugador',
+          color: soloColor,
+        });
+        setPlayerId(joinRes.playerId);
+        navigate(`/play/${res.code}`);
+      } else {
+        navigate(`/host/${res.code}`);
+      }
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'No se pudo crear la partida.');
     } finally {
@@ -104,7 +119,38 @@ export default function HostSetup() {
             +
           </button>
         </div>
+        {isSolo && (
+          <p className="app-subtitle setup-solo-hint">
+            Vas a jugar tú solo: no hará falta código ni pantalla de anfitrión, se empieza directo.
+          </p>
+        )}
       </section>
+
+      {isSolo && (
+        <section className="setup-section">
+          <h2>Tu nombre</h2>
+          <input
+            type="text"
+            value={soloName}
+            onChange={(e) => setSoloName(e.target.value)}
+            placeholder="Nombre"
+            maxLength={20}
+            className="setup-solo-name-input"
+          />
+          <div className="color-picker">
+            {PLAYER_COLORS.map((c) => (
+              <button
+                type="button"
+                key={c}
+                className={`color-swatch ${soloColor === c ? 'color-swatch-active' : ''}`}
+                style={{ backgroundColor: c }}
+                onClick={() => setSoloColor(c)}
+                aria-label={`Elegir color ${c}`}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="setup-section">
         <h2>Duración de la partida</h2>
@@ -204,7 +250,7 @@ export default function HostSetup() {
       {createError && <p className="error-text">{createError}</p>}
 
       <button className="btn btn-primary btn-big" onClick={handleCreateRoom} disabled={creating || !selectedRosco}>
-        {creating ? 'Creando...' : 'Crear partida'}
+        {creating ? 'Creando...' : isSolo ? 'Empezar a jugar' : 'Crear partida'}
       </button>
     </div>
   );
