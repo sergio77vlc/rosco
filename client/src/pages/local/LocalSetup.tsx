@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PLAYER_COLORS, type Rosco } from '@rosco/shared';
+import { PLAYER_AVATARS, PLAYER_COLORS, type Rosco } from '@rosco/shared';
 import RoscoPicker from '../../components/RoscoPicker';
+import AvatarPicker from '../../components/AvatarPicker';
+import AvatarView from '../../components/AvatarView';
 import { TIMER_OPTIONS } from '../../constants';
 import { useLocalGame } from '../../context/LocalGameContext';
 
@@ -13,6 +15,10 @@ function defaultColors(count: number): string[] {
   return Array.from({ length: count }, (_, i) => PLAYER_COLORS[i % PLAYER_COLORS.length]);
 }
 
+function defaultAvatars(count: number): string[] {
+  return Array.from({ length: count }, (_, i) => PLAYER_AVATARS[i % PLAYER_AVATARS.length]);
+}
+
 export default function LocalSetup() {
   const navigate = useNavigate();
   const { startGame } = useLocalGame();
@@ -20,6 +26,8 @@ export default function LocalSetup() {
   const [playerCount, setPlayerCount] = useState(2);
   const [names, setNames] = useState<string[]>(() => defaultNames(2));
   const [colors, setColors] = useState<string[]>(() => defaultColors(2));
+  const [avatars, setAvatars] = useState<string[]>(() => defaultAvatars(2));
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [timerSeconds, setTimerSeconds] = useState(120);
   const [selectedRosco, setSelectedRosco] = useState<Rosco | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +45,11 @@ export default function LocalSetup() {
       while (arr.length < clamped) arr.push(PLAYER_COLORS[arr.length % PLAYER_COLORS.length]);
       return arr.slice(0, clamped);
     });
+    setAvatars((prev) => {
+      const arr = [...prev];
+      while (arr.length < clamped) arr.push(PLAYER_AVATARS[arr.length % PLAYER_AVATARS.length]);
+      return arr.slice(0, clamped);
+    });
   }
 
   function handleStart() {
@@ -45,7 +58,11 @@ export default function LocalSetup() {
       return;
     }
     setError(null);
-    const players = names.map((name, i) => ({ name: name.trim() || `Jugador ${i + 1}`, color: colors[i] }));
+    const players = names.map((name, i) => ({
+      name: name.trim() || `Jugador ${i + 1}`,
+      color: colors[i],
+      avatar: avatars[i],
+    }));
     startGame(selectedRosco, timerSeconds, players);
     navigate('/local/play');
   }
@@ -76,29 +93,45 @@ export default function LocalSetup() {
         <h2>Jugadores</h2>
         <div className="local-player-list">
           {names.map((name, i) => (
-            <div key={i} className="local-player-row">
-              <span className="color-swatch local-player-swatch" style={{ backgroundColor: colors[i] }} />
-              <input
-                type="text"
-                value={name}
-                onChange={(e) =>
-                  setNames((prev) => prev.map((n, idx) => (idx === i ? e.target.value : n)))
-                }
-                placeholder={`Jugador ${i + 1}`}
-                maxLength={20}
-              />
-              <div className="local-player-colors">
-                {PLAYER_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    className={`color-swatch color-swatch-small ${colors[i] === c ? 'color-swatch-active' : ''}`}
-                    style={{ backgroundColor: c }}
-                    onClick={() => setColors((prev) => prev.map((col, idx) => (idx === i ? c : col)))}
-                    aria-label={`Elegir color ${c} para jugador ${i + 1}`}
-                  />
-                ))}
+            <div key={i} className="local-player-card">
+              <div className="local-player-row">
+                <button
+                  type="button"
+                  className="local-player-avatar-btn"
+                  onClick={() => setExpandedIndex(expandedIndex === i ? null : i)}
+                  aria-label={`Cambiar avatar de jugador ${i + 1}`}
+                >
+                  <AvatarView avatar={avatars[i]} color={colors[i]} size={40} />
+                </button>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) =>
+                    setNames((prev) => prev.map((n, idx) => (idx === i ? e.target.value : n)))
+                  }
+                  placeholder={`Jugador ${i + 1}`}
+                  maxLength={20}
+                />
+                <div className="local-player-colors">
+                  {PLAYER_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      className={`color-swatch color-swatch-small ${colors[i] === c ? 'color-swatch-active' : ''}`}
+                      style={{ backgroundColor: c }}
+                      onClick={() => setColors((prev) => prev.map((col, idx) => (idx === i ? c : col)))}
+                      aria-label={`Elegir color ${c} para jugador ${i + 1}`}
+                    />
+                  ))}
+                </div>
               </div>
+              {expandedIndex === i && (
+                <AvatarPicker
+                  value={avatars[i]}
+                  color={colors[i]}
+                  onChange={(a) => setAvatars((prev) => prev.map((av, idx) => (idx === i ? a : av)))}
+                />
+              )}
             </div>
           ))}
         </div>
@@ -124,7 +157,7 @@ export default function LocalSetup() {
       {error && <p className="error-text">{error}</p>}
 
       <button className="btn btn-primary btn-big" onClick={handleStart} disabled={!selectedRosco}>
-        Empezar
+        🚀 Empezar
       </button>
     </div>
   );

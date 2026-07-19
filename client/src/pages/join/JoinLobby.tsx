@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { PLAYER_COLORS } from '@rosco/shared';
+import { DEFAULT_AVATAR, PLAYER_COLORS } from '@rosco/shared';
 import PlayerBadge from '../../components/PlayerBadge';
+import AvatarPicker from '../../components/AvatarPicker';
 import { useGame } from '../../context/GameContext';
 import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
 
@@ -13,6 +14,7 @@ export default function JoinLobby() {
 
   const [name, setName] = useState('');
   const [color, setColor] = useState<string>(PLAYER_COLORS[0]);
+  const [avatar, setAvatar] = useState<string>(DEFAULT_AVATAR);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,6 +35,7 @@ export default function JoinLobby() {
         code,
         name: name.trim() || 'Jugador',
         color,
+        avatar,
       });
       setPlayerId(res.playerId);
     } catch (err) {
@@ -70,9 +73,10 @@ export default function JoinLobby() {
               />
             ))}
           </div>
+          <AvatarPicker value={avatar} color={color} onChange={setAvatar} />
           {error && <p className="error-text">{error}</p>}
           <button className="btn btn-primary btn-big" type="submit" disabled={joining}>
-            {joining ? 'Entrando...' : 'Entrar a la sala'}
+            {joining ? 'Entrando...' : '🚀 Entrar a la sala'}
           </button>
         </form>
       </div>
@@ -86,7 +90,7 @@ export default function JoinLobby() {
       {room && (
         <div className="lobby-players-list">
           {room.players.map((p) => (
-            <PlayerBadge key={p.id} name={p.name} color={p.color} connected={p.connected} />
+            <PlayerBadge key={p.id} name={p.name} color={p.color} avatar={p.avatar} connected={p.connected} />
           ))}
         </div>
       )}

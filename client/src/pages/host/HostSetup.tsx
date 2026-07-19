@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PLAYER_COLORS, type Rosco } from '@rosco/shared';
+import { DEFAULT_AVATAR, PLAYER_COLORS, type Rosco } from '@rosco/shared';
 import { useGame } from '../../context/GameContext';
 import RoscoPicker from '../../components/RoscoPicker';
+import AvatarPicker from '../../components/AvatarPicker';
 import { TIMER_OPTIONS } from '../../constants';
 
 export default function HostSetup() {
@@ -13,6 +14,7 @@ export default function HostSetup() {
   const [timerSeconds, setTimerSeconds] = useState(120);
   const [soloName, setSoloName] = useState('');
   const [soloColor, setSoloColor] = useState<string>(PLAYER_COLORS[0]);
+  const [soloAvatar, setSoloAvatar] = useState<string>(DEFAULT_AVATAR);
   const isSolo = maxPlayers === 1;
 
   const [selectedRosco, setSelectedRosco] = useState<Rosco | null>(null);
@@ -40,6 +42,7 @@ export default function HostSetup() {
           code: res.code,
           name: soloName.trim() || 'Jugador',
           color: soloColor,
+          avatar: soloAvatar,
         });
         setPlayerId(joinRes.playerId);
         navigate(`/play/${res.code}`);
@@ -98,6 +101,7 @@ export default function HostSetup() {
               />
             ))}
           </div>
+          <AvatarPicker value={soloAvatar} color={soloColor} onChange={setSoloAvatar} />
         </section>
       )}
 
@@ -121,7 +125,7 @@ export default function HostSetup() {
       {createError && <p className="error-text">{createError}</p>}
 
       <button className="btn btn-primary btn-big" onClick={handleCreateRoom} disabled={creating || !selectedRosco}>
-        {creating ? 'Creando...' : isSolo ? 'Empezar a jugar' : 'Crear partida'}
+        {creating ? 'Creando...' : isSolo ? '🚀 Empezar a jugar' : '🎬 Crear partida'}
       </button>
     </div>
   );

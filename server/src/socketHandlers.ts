@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import type { Server, Socket } from 'socket.io';
-import { ROSCO_ALPHABET, answerMatchesLetterRule } from '@rosco/shared';
+import { DEFAULT_AVATAR, ROSCO_ALPHABET, answerMatchesLetterRule } from '@rosco/shared';
 import type {
   HostCreateRoomPayload,
   PlayerJoinRoomPayload,
@@ -30,6 +30,8 @@ const MIN_PLAYERS = 1;
 const MAX_PLAYERS = 6;
 const MIN_TIMER_SECONDS = 30;
 const MAX_TIMER_SECONDS = 600;
+// Suficiente para una foto JPEG pequeña en base64 (~200x200) sin permitir payloads abusivos.
+const MAX_AVATAR_LENGTH = 300_000;
 
 function validateRosco(rosco: Rosco): string | null {
   if (!rosco || !Array.isArray(rosco.letters) || rosco.letters.length !== ROSCO_ALPHABET.length) {
@@ -148,7 +150,10 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
       return;
     }
     const name = payload.name.trim().slice(0, 20) || 'Jugador';
-    const player = createPlayer(nanoid(8), socket.id, name, payload.color, room.rosco.letters.length);
+    const avatar = typeof payload.avatar === 'string' && payload.avatar.length <= MAX_AVATAR_LENGTH
+      ? payload.avatar
+      : DEFAULT_AVATAR;
+    const player = createPlayer(nanoid(8), socket.id, name, payload.color, avatar, room.rosco.letters.length);
     room.players.set(player.id, player);
     socket.join(room.code);
     ack?.({ ok: true, playerId: player.id, room: toPublicRoom(room) });

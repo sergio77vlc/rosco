@@ -7,6 +7,7 @@ export function createPlayer(
   socketId: string,
   name: string,
   color: string,
+  avatar: string,
   roscoLength: number,
 ): ServerPlayer {
   return {
@@ -14,6 +15,7 @@ export function createPlayer(
     socketId,
     name,
     color,
+    avatar,
     connected: true,
     progress: createInitialProgress(roscoLength),
     currentIndex: 0,
@@ -59,6 +61,7 @@ function toPublicPlayer(player: ServerPlayer): PlayerPublic {
     id: player.id,
     name: player.name,
     color: player.color,
+    avatar: player.avatar,
     connected: player.connected,
     progress,
     currentIndex: player.currentIndex,
@@ -112,6 +115,7 @@ export function computeRanking(room: ServerRoom): RankingEntry[] {
     playerId: e.player.id,
     name: e.player.name,
     color: e.player.color,
+    avatar: e.player.avatar,
     correctCount: e.correctCount,
     wrongCount: e.wrongCount,
     finishedAt: e.player.finishedAt,

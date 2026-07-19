@@ -18,6 +18,7 @@ export function toPlayerPublic(player: LocalPlayerState): PlayerPublic {
     id: player.id,
     name: player.name,
     color: player.color,
+    avatar: player.avatar,
     connected: true,
     progress: withActiveState(player.progress, player.currentIndex, finished),
     currentIndex: player.currentIndex,

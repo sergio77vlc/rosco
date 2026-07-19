@@ -45,7 +45,7 @@ export default function HostLobby({ room }: HostLobbyProps) {
       <div className="lobby-players-list">
         {room.players.length === 0 && <p className="app-subtitle">Esperando a que se unan jugadores...</p>}
         {room.players.map((p) => (
-          <PlayerBadge key={p.id} name={p.name} color={p.color} connected={p.connected} />
+          <PlayerBadge key={p.id} name={p.name} color={p.color} avatar={p.avatar} connected={p.connected} />
         ))}
       </div>
 

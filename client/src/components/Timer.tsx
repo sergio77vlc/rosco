@@ -3,9 +3,10 @@ import React, { useEffect, useState } from 'react';
 interface TimerProps {
   endsAt: number | null;
   large?: boolean;
+  compact?: boolean;
 }
 
-export default function Timer({ endsAt, large }: TimerProps) {
+export default function Timer({ endsAt, large, compact }: TimerProps) {
   const [remainingMs, setRemainingMs] = useState(() => (endsAt ? endsAt - Date.now() : 0));
 
   useEffect(() => {
@@ -24,8 +25,8 @@ export default function Timer({ endsAt, large }: TimerProps) {
   const low = totalSeconds <= 15;
 
   return (
-    <div className={`timer ${large ? 'timer-large' : ''} ${low ? 'timer-low' : ''}`}>
-      {minutes}:{seconds.toString().padStart(2, '0')}
+    <div className={`timer ${large ? 'timer-large' : ''} ${compact ? 'timer-compact' : ''} ${low ? 'timer-low' : ''}`}>
+      ⏱ {minutes}:{seconds.toString().padStart(2, '0')}
     </div>
   );
 }

@@ -5,6 +5,7 @@ export interface ServerPlayer {
   socketId: string;
   name: string;
   color: string;
+  avatar: string;
   connected: boolean;
   progress: LetterState[];
   currentIndex: number;

@@ -6,6 +6,7 @@ export interface LocalPlayerState {
   id: string;
   name: string;
   color: string;
+  avatar: string;
   progress: LetterState[];
   currentIndex: number;
   finishedAt: number | null;
@@ -23,7 +24,12 @@ interface LocalGameState {
 }
 
 type LocalGameAction =
-  | { type: 'START_GAME'; rosco: Rosco; timerSeconds: number; players: { name: string; color: string }[] }
+  | {
+      type: 'START_GAME';
+      rosco: Rosco;
+      timerSeconds: number;
+      players: { name: string; color: string; avatar: string }[];
+    }
   | { type: 'RESOLVE'; resolution: 'correct' | 'wrong' | 'passed' }
   | { type: 'TIME_UP' }
   | { type: 'RESET' };
@@ -54,6 +60,7 @@ function localGameReducer(state: LocalGameState, action: LocalGameAction): Local
         id: `local-${i}`,
         name: p.name,
         color: p.color,
+        avatar: p.avatar,
         progress: createInitialProgress(action.rosco.letters.length),
         currentIndex: 0,
         finishedAt: null,
@@ -101,7 +108,11 @@ function localGameReducer(state: LocalGameState, action: LocalGameAction): Local
 }
 
 interface LocalGameContextValue extends LocalGameState {
-  startGame: (rosco: Rosco, timerSeconds: number, players: { name: string; color: string }[]) => void;
+  startGame: (
+    rosco: Rosco,
+    timerSeconds: number,
+    players: { name: string; color: string; avatar: string }[],
+  ) => void;
   submitAnswer: (answerText: string) => void;
   pass: () => void;
   resetGame: () => void;
@@ -127,7 +138,11 @@ export function LocalGameProvider({ children }: { children: React.ReactNode }) {
     };
   }, [state.phase, state.endsAt]);
 
-  function startGame(rosco: Rosco, timerSeconds: number, players: { name: string; color: string }[]) {
+  function startGame(
+    rosco: Rosco,
+    timerSeconds: number,
+    players: { name: string; color: string; avatar: string }[],
+  ) {
     dispatch({ type: 'START_GAME', rosco, timerSeconds, players });
   }
 

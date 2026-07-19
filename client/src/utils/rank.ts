@@ -12,6 +12,7 @@ export function rankPlayers(players: PlayerPublic[]): RankingEntry[] {
     playerId: p.id,
     name: p.name,
     color: p.color,
+    avatar: p.avatar,
     correctCount: p.correctCount,
     wrongCount: p.wrongCount,
     finishedAt: p.finishedAt,

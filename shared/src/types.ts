@@ -28,6 +28,7 @@ export interface PlayerPublic {
   id: string;
   name: string;
   color: string;
+  avatar: string;
   connected: boolean;
   progress: PlayerProgressEntry[];
   currentIndex: number;
@@ -53,6 +54,7 @@ export interface RankingEntry {
   playerId: string;
   name: string;
   color: string;
+  avatar: string;
   correctCount: number;
   wrongCount: number;
   finishedAt: number | null;
@@ -71,6 +73,7 @@ export interface PlayerJoinRoomPayload {
   code: string;
   name: string;
   color: string;
+  avatar: string;
 }
 
 export interface PlayerSubmitAnswerPayload {
@@ -94,3 +97,12 @@ export const PLAYER_COLORS = [
   '#ef4444', '#f97316', '#eab308', '#22c55e',
   '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899',
 ] as const;
+
+/** Avatares emoji predefinidos para elegir sin necesidad de cámara. */
+export const PLAYER_AVATARS = [
+  '🦁', '🐯', '🐻', '🐼', '🦊', '🐨', '🐸', '🐵',
+  '🦄', '🐲', '🦉', '🐺', '🐱', '🐶', '🦋', '🐝',
+  '🦅', '🐳', '🐙', '🦖', '🎃', '👻', '🤖', '👽',
+] as const;
+
+export const DEFAULT_AVATAR = PLAYER_AVATARS[0];

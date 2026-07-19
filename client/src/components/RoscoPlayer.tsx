@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { LetterClue, PlayerProgressEntry } from '@rosco/shared';
 import RoscoWheel from './RoscoWheel';
 import Timer from './Timer';
+import AvatarView from './AvatarView';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 
@@ -14,6 +15,13 @@ interface RoscoPlayerProps {
   onSubmitAnswer: (answerText: string) => void;
   onPass: () => void;
   doneMessage?: string;
+  playerName: string;
+  playerAvatar: string;
+  playerColor: string;
+  correctCount: number;
+  wrongCount: number;
+  turnLabel?: string;
+  headerExtra?: React.ReactNode;
 }
 
 export default function RoscoPlayer({
@@ -25,9 +33,17 @@ export default function RoscoPlayer({
   onSubmitAnswer,
   onPass,
   doneMessage = '¡Has terminado tu rosco! Esperando a los demás...',
+  playerName,
+  playerAvatar,
+  playerColor,
+  correctCount,
+  wrongCount,
+  turnLabel,
+  headerExtra,
 }: RoscoPlayerProps) {
   const [answerText, setAnswerText] = useState('');
   const [flash, setFlash] = useState<'correct' | 'wrong' | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const pendingIndexRef = useRef<number | null>(null);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSpokenIndexRef = useRef<number | null>(null);
@@ -86,12 +102,30 @@ export default function RoscoPlayer({
   }
 
   return (
-    <div className="screen screen-center player-game">
-      <Timer endsAt={endsAt} />
-      <RoscoWheel letters={letters} progress={progress} size={280} />
+    <div className="player-game">
+      <div className="game-status-bar">
+        <div className="status-player">
+          <AvatarView avatar={playerAvatar} color={playerColor} size={36} />
+          <div className="status-player-info">
+            {turnLabel && <span className="status-turn-label">{turnLabel}</span>}
+            <span className="status-player-name">{playerName}</span>
+          </div>
+        </div>
+        <div className="status-stats">
+          <span className="status-stat status-stat-correct">✔{correctCount}</span>
+          <span className="status-stat status-stat-wrong">✘{wrongCount}</span>
+        </div>
+        <Timer endsAt={endsAt} compact />
+      </div>
+
+      {headerExtra}
+
+      <div className="rosco-wheel-wrap">
+        <RoscoWheel letters={letters} progress={progress} avatar={playerAvatar} color={playerColor} size={360} />
+      </div>
 
       {finished ? (
-        <p className="app-subtitle">{doneMessage}</p>
+        <p className="app-subtitle game-done-message">{doneMessage}</p>
       ) : (
         <>
           <div
@@ -101,54 +135,66 @@ export default function RoscoPlayer({
           >
             <div className="clue-card-top">
               <span className="clue-letter">{currentLetter.letter}</span>
-              {tts.supported && (
-                <button
-                  type="button"
-                  className={`btn-icon-flat ${tts.speaking ? 'btn-icon-flat-active' : ''}`}
-                  onClick={() => (tts.speaking ? tts.stop() : tts.speak(currentLetter.clue))}
-                  aria-label="Escuchar pista"
-                  title="Escuchar pista"
-                >
-                  {tts.speaking ? '⏸️' : '🔊'}
-                </button>
-              )}
+              <p className="clue-text">{currentLetter.clue}</p>
+              <div className="clue-card-actions">
+                {tts.supported && (
+                  <button
+                    type="button"
+                    className={`btn-icon-flat ${tts.speaking ? 'btn-icon-flat-active' : ''}`}
+                    onClick={() => (tts.speaking ? tts.stop() : tts.speak(currentLetter.clue))}
+                    aria-label="Escuchar pista"
+                    title="Escuchar pista"
+                  >
+                    {tts.speaking ? '⏸️' : '🔊'}
+                  </button>
+                )}
+                {tts.supported && (
+                  <button
+                    type="button"
+                    className={`btn-icon-flat ${settingsOpen ? 'btn-icon-flat-active' : ''}`}
+                    onClick={() => setSettingsOpen((v) => !v)}
+                    aria-label="Ajustes de voz"
+                    title="Ajustes de voz"
+                  >
+                    ⚙️
+                  </button>
+                )}
+              </div>
             </div>
-            <p className="clue-text">{currentLetter.clue}</p>
+
+            {settingsOpen && (
+              <div className="tts-popover">
+                <label className="tts-rate-label">
+                  Velocidad: {tts.rate.toFixed(2)}x
+                  <input
+                    type="range"
+                    min={tts.MIN_RATE}
+                    max={tts.MAX_RATE}
+                    step={0.25}
+                    value={tts.rate}
+                    onChange={(e) => tts.setRate(Number(e.target.value))}
+                  />
+                </label>
+                <label className="tts-auto-label">
+                  <input
+                    type="checkbox"
+                    checked={tts.autoRead}
+                    onChange={(e) => tts.setAutoRead(e.target.checked)}
+                  />
+                  Leer pistas automáticamente
+                </label>
+                {tts.silentWarning && (
+                  <p className="tts-warning">
+                    No se ha oído el audio. Prueba a bajar "Shields" en Brave, usar Chrome, o jugar
+                    desde el móvil.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
-          {tts.supported && (
-            <div className="tts-settings">
-              <label className="tts-rate-label">
-                Velocidad de lectura: {tts.rate.toFixed(2)}x
-                <input
-                  type="range"
-                  min={tts.MIN_RATE}
-                  max={tts.MAX_RATE}
-                  step={0.25}
-                  value={tts.rate}
-                  onChange={(e) => tts.setRate(Number(e.target.value))}
-                />
-              </label>
-              <label className="tts-auto-label">
-                <input
-                  type="checkbox"
-                  checked={tts.autoRead}
-                  onChange={(e) => tts.setAutoRead(e.target.checked)}
-                />
-                Leer pistas automáticamente
-              </label>
-              {tts.silentWarning && (
-                <p className="tts-warning">
-                  No se ha oído el audio. Tu navegador puede no tener voces de síntesis instaladas
-                  (ocurre a veces en Brave/Linux) — prueba a bajar el nivel de "Shields" del sitio en
-                  Brave, usar Chrome, o jugar desde el móvil.
-                </p>
-              )}
-            </div>
-          )}
-
           <form
-            className="answer-form"
+            className="answer-form-compact"
             onSubmit={(e) => {
               e.preventDefault();
               submit();
@@ -177,10 +223,10 @@ export default function RoscoPlayer({
             </div>
             <div className="answer-buttons">
               <button className="btn btn-secondary" type="button" onClick={pass}>
-                Pasapalabra
+                ⏭️ Pasapalabra
               </button>
               <button className="btn btn-primary" type="submit" disabled={!answerText.trim()}>
-                Responder
+                ✅ Responder
               </button>
             </div>
           </form>

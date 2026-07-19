@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import RoscoPlayer from '../../components/RoscoPlayer';
+import AvatarView from '../../components/AvatarView';
 import { useGame } from '../../context/GameContext';
 import { getSocket } from '../../socket';
 import { rankPlayers } from '../../utils/rank';
@@ -41,6 +42,7 @@ export default function PlayerGame() {
           {ranking.map((r) => (
             <div key={r.playerId} className={`ranking-row ${r.playerId === playerId ? 'ranking-row-me' : ''}`}>
               <span className="ranking-medal">#{r.rank}</span>
+              <AvatarView avatar={r.avatar} color={r.color} size={32} />
               <span className="ranking-name">{r.name}</span>
               <span className="ranking-score">
                 {r.correctCount} aciertos · {r.wrongCount} fallos
@@ -61,6 +63,11 @@ export default function PlayerGame() {
       endsAt={room.endsAt}
       onSubmitAnswer={(answerText) => getSocket().emit('player:submitAnswer', { code, answerText })}
       onPass={() => getSocket().emit('player:pass', { code })}
+      playerName={player.name}
+      playerAvatar={player.avatar}
+      playerColor={player.color}
+      correctCount={player.correctCount}
+      wrongCount={player.wrongCount}
     />
   );
 }

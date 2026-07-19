@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import PlayerBadge from '../../components/PlayerBadge';
+import AvatarView from '../../components/AvatarView';
 import RoscoPlayer from '../../components/RoscoPlayer';
 import { useLocalGame } from '../../context/LocalGameContext';
 import { rankPlayers } from '../../utils/rank';
@@ -33,6 +33,7 @@ export default function LocalGamePage() {
           {ranking.map((r) => (
             <div key={r.playerId} className="ranking-row">
               <span className="ranking-medal">{MEDALS[r.rank - 1] ?? `#${r.rank}`}</span>
+              <AvatarView avatar={r.avatar} color={r.color} size={32} />
               <span className="ranking-name">{r.name}</span>
               <span className="ranking-score">
                 {r.correctCount} aciertos · {r.wrongCount} fallos
@@ -47,7 +48,7 @@ export default function LocalGamePage() {
             navigate('/local');
           }}
         >
-          Jugar otra vez
+          🔁 Jugar otra vez
         </button>
       </div>
     );
@@ -57,44 +58,46 @@ export default function LocalGamePage() {
   if (!activePlayer) return null;
   const publicActive = toPlayerPublic(activePlayer);
 
+  const otherPlayers = players.filter((_, i) => i !== activePlayerIndex);
+
   return (
-    <div className="local-game-wrap">
-      <div className="turn-banner" key={`turn-${activePlayerIndex}`}>
-        <span className="turn-banner-label">Turno de</span>
-        <PlayerBadge name={activePlayer.name} color={activePlayer.color} />
-      </div>
-
-      <div className="scoreboard-row">
-        {players.map((p, i) => {
-          const pub = toPlayerPublic(p);
-          const isActive = i === activePlayerIndex;
-          const isFinished = Boolean(p.finishedAt);
-          return (
-            <div key={p.id} className={`scoreboard-chip ${isActive ? 'scoreboard-chip-active' : ''}`}>
-              <PlayerBadge
-                name={p.name}
-                color={p.color}
-                subtitle={
-                  isFinished
-                    ? `Terminado · ${pub.correctCount}✔ ${pub.wrongCount}✘`
-                    : `${pub.correctCount}✔ ${pub.wrongCount}✘`
-                }
-              />
-            </div>
-          );
-        })}
-      </div>
-
-      <RoscoPlayer
-        key={`player-${activePlayerIndex}`}
-        letters={rosco.letters}
-        progress={publicActive.progress}
-        currentIndex={activePlayer.currentIndex}
-        finished={Boolean(activePlayer.finishedAt)}
-        endsAt={endsAt}
-        onSubmitAnswer={submitAnswer}
-        onPass={pass}
-      />
-    </div>
+    <RoscoPlayer
+      key={`player-${activePlayerIndex}`}
+      letters={rosco.letters}
+      progress={publicActive.progress}
+      currentIndex={activePlayer.currentIndex}
+      finished={Boolean(activePlayer.finishedAt)}
+      endsAt={endsAt}
+      onSubmitAnswer={submitAnswer}
+      onPass={pass}
+      playerName={activePlayer.name}
+      playerAvatar={activePlayer.avatar}
+      playerColor={activePlayer.color}
+      correctCount={publicActive.correctCount}
+      wrongCount={publicActive.wrongCount}
+      turnLabel="Turno de"
+      doneMessage={`¡${activePlayer.name} ha terminado su rosco!`}
+      headerExtra={
+        otherPlayers.length > 0 ? (
+          <div className="mini-scoreboard">
+            {otherPlayers.map((p) => {
+              const pub = toPlayerPublic(p);
+              return (
+                <div
+                  key={p.id}
+                  className={`mini-scoreboard-chip ${p.finishedAt ? 'mini-scoreboard-chip-done' : ''}`}
+                  title={`${p.name}: ${pub.correctCount} aciertos, ${pub.wrongCount} fallos`}
+                >
+                  <AvatarView avatar={p.avatar} color={p.color} size={24} />
+                  <span>
+                    {pub.correctCount}✔ {pub.wrongCount}✘
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : null
+      }
+    />
   );
 }

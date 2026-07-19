@@ -7,9 +7,10 @@ Juego web multijugador tipo "Pasapalabra" (rosco). Un dispositivo hospeda la par
 - Pantalla inicial: **hospedar partida**, **unirse escaneando un QR**, o **jugar en el mismo dispositivo** (modo local, sin red).
 - Configuración del anfitrión: número de jugadores (1-6), duración del cronómetro y elección del rosco.
 - La partida arranca automáticamente en cuanto se llena el aforo de jugadores, sin esperar a que el anfitrión pulse nada. Si eliges 1 jugador, no hay ni pantalla de anfitrión ni QR: el mismo dispositivo pasa directo a jugar.
-- Roscos predefinidos: 60 roscos completos (25 pistas cada uno, 1.500 pistas en total), organizados por dificultad (fácil/medio/difícil) y tema — 30 de cultura general (10 por cada nivel de dificultad) y al menos 5 en cada categoría temática: animales, cine, geografía, ciencia, historia y deportes.
+- Roscos predefinidos: 60 roscos completos (25 pistas cada uno, 1.500 pistas en total). El selector los organiza en dos niveles: primero eliges la **categoría** (cultura general, animales, cine, geografía, ciencia, historia, deportes) y luego el **nivel de dificultad** dentro de ella — 30 roscos de cultura general (10 por nivel) y al menos 5 en cada categoría temática.
 - Generación de roscos completos mediante prompt con IA (API de Anthropic/Claude), a partir de un tema y una dificultad.
-- Cada jugador juega desde su móvil: ve su rosco, la pista activa, y puede responder o pasar (pasapalabra).
+- **Avatares**: cada jugador elige su avatar de una lista de emojis, o se hace una foto con la cámara del móvil para usarla como avatar. El avatar aparece en el centro de su rosco y junto a su nombre en todas las pantallas.
+- Cada jugador juega desde su móvil: ve su rosco (con su avatar en el centro), la pista activa, y puede responder o pasar (pasapalabra). La pantalla de juego está pensada para verse entera de un vistazo en un móvil, sin necesidad de hacer scroll: rueda, turno, aciertos, fallos, cronómetro, pista y botones caben siempre en pantalla.
 - Lectura de la pista en voz alta (TTS) con velocidad ajustable y opción de lectura automática al cambiar de letra.
 - Respuesta por voz: un botón de micrófono dicta la respuesta directamente al campo de texto (reconocimiento de voz del navegador).
 - El anfitrión ve **todos los roscos de todos los jugadores en tiempo real**, en la misma pantalla, con cronómetro y ranking en vivo.
@@ -70,7 +71,7 @@ Para desplegarlo en un servidor con dominio público, el QR generado usará auto
 
 ## Desplegar con HTTPS y dominio propio (recomendado)
 
-La cámara (para escanear el QR) y el micrófono (para dictar respuestas) **solo funcionan en HTTPS** — los navegadores los bloquean por completo en HTTP salvo en `localhost`. Si tienes un dominio (por ejemplo comprado en Nominalia) y un VPS, esta es la forma recomendada de servir la app:
+La cámara (para escanear el QR y para hacer la foto del avatar) y el micrófono (para dictar respuestas) **solo funcionan en HTTPS** — los navegadores los bloquean por completo en HTTP salvo en `localhost`. Si tienes un dominio (por ejemplo comprado en Nominalia) y un VPS, esta es la forma recomendada de servir la app:
 
 ### 1. Apunta el dominio al VPS
 
@@ -188,9 +189,11 @@ client/src/pages/host/*    Configuración, sala de espera (QR), dashboard en viv
 client/src/pages/join/*    Escaneo de QR / código manual, sala de espera y pantalla de juego
 client/src/pages/local/*   Modo "pasa y juega" en el mismo dispositivo (configuración, turnos, resultados)
 client/src/context/LocalGameContext.tsx  Estado del modo local (turnos, progreso por jugador), sin red
-client/src/components/RoscoWheel.tsx  Rueda del rosco (SVG)
-client/src/components/RoscoPlayer.tsx Panel de juego reutilizado por el modo en red y el modo local
-client/src/components/RoscoPicker.tsx Selector de rosco (predefinido o IA) reutilizado por ambos modos
+client/src/components/RoscoWheel.tsx  Rueda del rosco (SVG), con el avatar del jugador en el centro
+client/src/components/RoscoPlayer.tsx Panel de juego compacto (sin scroll) reutilizado por el modo en red y el modo local
+client/src/components/RoscoPicker.tsx Selector de rosco en dos niveles: categoría → dificultad (predefinido o IA)
+client/src/components/AvatarPicker.tsx Selector de avatar: lista de emojis o foto con la cámara
+client/src/components/AvatarView.tsx  Renderiza un avatar (emoji o foto) de forma consistente en toda la app
 client/src/hooks/useSpeechSynthesis.ts   Lectura de la pista en voz alta (TTS), velocidad ajustable
 client/src/hooks/useSpeechRecognition.ts Dictado de la respuesta por micrófono (STT)
 shared/src/roscoProgress.ts  Motor de turnos (avanzar letra, resolver acierto/fallo/pasapalabra), usado por el servidor y por el modo local del cliente

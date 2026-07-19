@@ -27,12 +27,13 @@ export default function HostGame({ room }: HostGameProps) {
               <PlayerBadge
                 name={p.name}
                 color={p.color}
+                avatar={p.avatar}
                 connected={p.connected}
                 subtitle={`#${rankByPlayerId.get(p.id)} · ${p.correctCount} aciertos · ${p.wrongCount} fallos`}
               />
               {p.finishedAt && <span className="badge-done">TERMINADO</span>}
             </div>
-            <RoscoWheel letters={room.rosco.letters} progress={p.progress} size={240} />
+            <RoscoWheel letters={room.rosco.letters} progress={p.progress} avatar={p.avatar} color={p.color} size={240} />
           </div>
         ))}
       </div>
