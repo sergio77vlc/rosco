@@ -14,6 +14,9 @@ export default function Home() {
         <button className="btn btn-secondary btn-big" onClick={() => navigate('/join')}>
           Unirse a una partida
         </button>
+        <button className="btn btn-tertiary btn-big" onClick={() => navigate('/local')}>
+          Jugar en este dispositivo
+        </button>
       </div>
     </div>
   );

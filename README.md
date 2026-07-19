@@ -4,7 +4,7 @@ Juego web multijugador tipo "Pasapalabra" (rosco). Un dispositivo hospeda la par
 
 ## Funcionalidades
 
-- Pantalla inicial: **hospedar partida** o **unirse escaneando un QR**.
+- Pantalla inicial: **hospedar partida**, **unirse escaneando un QR**, o **jugar en el mismo dispositivo** (modo local, sin red).
 - Configuración del anfitrión: número de jugadores (1-6), duración del cronómetro y elección del rosco.
 - La partida arranca automáticamente en cuanto se llena el aforo de jugadores, sin esperar a que el anfitrión pulse nada. Si eliges 1 jugador, no hay ni pantalla de anfitrión ni QR: el mismo dispositivo pasa directo a jugar.
 - Roscos predefinidos: 60 roscos completos (25 pistas cada uno, 1.500 pistas en total), organizados por dificultad (fácil/medio/difícil) y tema — 30 de cultura general (10 por cada nivel de dificultad) y al menos 5 en cada categoría temática: animales, cine, geografía, ciencia, historia y deportes.
@@ -13,6 +13,7 @@ Juego web multijugador tipo "Pasapalabra" (rosco). Un dispositivo hospeda la par
 - Lectura de la pista en voz alta (TTS) con velocidad ajustable y opción de lectura automática al cambiar de letra.
 - Respuesta por voz: un botón de micrófono dicta la respuesta directamente al campo de texto (reconocimiento de voz del navegador).
 - El anfitrión ve **todos los roscos de todos los jugadores en tiempo real**, en la misma pantalla, con cronómetro y ranking en vivo.
+- **Modo local ("Jugar en este dispositivo")**: hasta 6 jugadores se turnan en el mismo móvil o pantalla, sin necesidad de red ni de otros dispositivos — cada uno juega su rosco y luego pasa el dispositivo al siguiente, con una pantalla de "cambio de turno" entre jugador y jugador.
 - Resultados finales con ranking (aciertos, fallos y tiempo).
 
 ## Arquitectura
@@ -183,11 +184,16 @@ server/src/gameEngine.ts      Motor del juego: turnos, pasapalabra, corrección,
 server/src/socketHandlers.ts  Eventos de Socket.IO (host y jugadores)
 server/src/rooms.ts           Estado de las salas en memoria
 
-client/src/pages/host/*   Configuración, sala de espera (QR), dashboard en vivo y resultados
-client/src/pages/join/*   Escaneo de QR / código manual, sala de espera y pantalla de juego
+client/src/pages/host/*    Configuración, sala de espera (QR), dashboard en vivo y resultados
+client/src/pages/join/*    Escaneo de QR / código manual, sala de espera y pantalla de juego
+client/src/pages/local/*   Modo "pasa y juega" en el mismo dispositivo (configuración, turnos, resultados)
+client/src/context/LocalGameContext.tsx  Estado del modo local (turnos, progreso por jugador), sin red
 client/src/components/RoscoWheel.tsx  Rueda del rosco (SVG)
+client/src/components/RoscoPlayer.tsx Panel de juego reutilizado por el modo en red y el modo local
+client/src/components/RoscoPicker.tsx Selector de rosco (predefinido o IA) reutilizado por ambos modos
 client/src/hooks/useSpeechSynthesis.ts   Lectura de la pista en voz alta (TTS), velocidad ajustable
 client/src/hooks/useSpeechRecognition.ts Dictado de la respuesta por micrófono (STT)
+shared/src/roscoProgress.ts  Motor de turnos (avanzar letra, resolver acierto/fallo/pasapalabra), usado por el servidor y por el modo local del cliente
 ```
 
 ## Notas y limitaciones conocidas

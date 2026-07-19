@@ -1,4 +1,4 @@
-import { isAnswerCorrect } from '@rosco/shared';
+import { createInitialProgress, isAnswerCorrect, resolveCurrentLetter } from '@rosco/shared';
 import type { LetterState, PlayerPublic, RankingEntry, RoomPublic } from '@rosco/shared';
 import type { ServerPlayer, ServerRoom } from './roomTypes.js';
 
@@ -15,44 +15,30 @@ export function createPlayer(
     name,
     color,
     connected: true,
-    progress: Array.from({ length: roscoLength }, () => 'pending' as LetterState),
+    progress: createInitialProgress(roscoLength),
     currentIndex: 0,
     finishedAt: null,
     joinedAt: Date.now(),
   };
 }
 
-function findNextOpenIndex(player: ServerPlayer): number | null {
-  const len = player.progress.length;
-  for (let step = 1; step <= len; step++) {
-    const idx = (player.currentIndex + step) % len;
-    const state = player.progress[idx];
-    if (state === 'pending' || state === 'passed') return idx;
-  }
-  return null;
-}
-
-function advance(player: ServerPlayer): void {
-  const next = findNextOpenIndex(player);
-  if (next === null) {
-    if (!player.finishedAt) player.finishedAt = Date.now();
-    return;
-  }
-  player.currentIndex = next;
+function applyResolution(player: ServerPlayer, resolution: 'correct' | 'wrong' | 'passed'): void {
+  const result = resolveCurrentLetter(player.progress, player.currentIndex, resolution);
+  player.progress = result.progress;
+  player.currentIndex = result.currentIndex;
+  if (result.finished && !player.finishedAt) player.finishedAt = Date.now();
 }
 
 export function submitAnswer(room: ServerRoom, player: ServerPlayer, answerText: string): void {
   if (player.finishedAt) return;
   const clue = room.rosco.letters[player.currentIndex];
   const correct = isAnswerCorrect(answerText, clue.answer);
-  player.progress[player.currentIndex] = correct ? 'correct' : 'wrong';
-  advance(player);
+  applyResolution(player, correct ? 'correct' : 'wrong');
 }
 
 export function passLetter(room: ServerRoom, player: ServerPlayer): void {
   if (player.finishedAt) return;
-  player.progress[player.currentIndex] = 'passed';
-  advance(player);
+  applyResolution(player, 'passed');
 }
 
 export function reconnectPlayer(player: ServerPlayer, socketId: string): void {
