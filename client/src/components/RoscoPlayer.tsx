@@ -6,6 +6,21 @@ import AvatarView from './AvatarView';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 
+const CORRECT_PHRASES = ['¡Correcto!', '¡Sí!', '¡Bien!'];
+const WRONG_PHRASES = ['No', 'Error'];
+const CORRECT_MILESTONE_STEP = 5;
+
+function pickRandom(list: string[]): string {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+interface OutcomeEvent {
+  seq: number;
+  playerName: string;
+  correctCount: number;
+  result: 'correct' | 'wrong' | 'passed';
+}
+
 interface RoscoPlayerProps {
   letters: Omit<LetterClue, 'answer'>[];
   progress: PlayerProgressEntry[];
@@ -24,6 +39,15 @@ interface RoscoPlayerProps {
   headerExtra?: React.ReactNode;
   canAct?: boolean;
   waitingMessage?: string;
+  /** Nombre del jugador que tiene el turno ahora mismo, para narrar los cambios de turno. */
+  activePlayerName?: string | null;
+  /**
+   * Último acierto/fallo/pasapalabra resuelto, cuando el padre puede proporcionarlo de forma
+   * explícita (p. ej. el modo local, donde este componente se remonta al cambiar el turno y no
+   * llegaría a ver por sí solo la resolución de su propia respuesta). Si no se pasa (modo en
+   * red, donde el componente nunca se remonta), se detecta internamente a partir de `progress`.
+   */
+  outcomeEvent?: OutcomeEvent | null;
 }
 
 export default function RoscoPlayer({
@@ -44,6 +68,8 @@ export default function RoscoPlayer({
   headerExtra,
   canAct = true,
   waitingMessage = 'Esperando turno...',
+  activePlayerName = null,
+  outcomeEvent,
 }: RoscoPlayerProps) {
   const [answerText, setAnswerText] = useState('');
   const [flash, setFlash] = useState<'correct' | 'wrong' | null>(null);
@@ -51,33 +77,77 @@ export default function RoscoPlayer({
   const pendingIndexRef = useRef<number | null>(null);
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSpokenIndexRef = useRef<number | null>(null);
+  const lastActiveNameRef = useRef<string | null>(null);
+  const lastHandledEventSeqRef = useRef<number | null>(null);
 
   const tts = useSpeechSynthesis();
   const speech = useSpeechRecognition((text) => setAnswerText(text));
 
   const currentLetter = letters[currentIndex] ?? null;
 
-  useEffect(() => {
-    if (pendingIndexRef.current === null) return;
-    const resolved = progress[pendingIndexRef.current];
-    if (resolved?.state === 'correct' || resolved?.state === 'wrong') {
-      setFlash(resolved.state);
-      pendingIndexRef.current = null;
-      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
-      flashTimeoutRef.current = setTimeout(() => setFlash(null), 900);
+  function pushOutcomePhrases(phrases: string[], result: 'correct' | 'wrong' | 'passed', forCorrectCount: number, forName: string) {
+    if (!tts.narrate) return;
+    if (result === 'correct') {
+      phrases.push(pickRandom(CORRECT_PHRASES));
+      if (forCorrectCount > 0 && forCorrectCount % CORRECT_MILESTONE_STEP === 0) {
+        phrases.push(`¡Qué bien va ${forName}!`);
+      }
+    } else if (result === 'wrong') {
+      phrases.push(pickRandom(WRONG_PHRASES));
+    } else {
+      phrases.push('Pasapalabra');
     }
-  }, [progress]);
+  }
 
+  // Encadena en un único efecto la narración del resultado (acierto/fallo/pasapalabra),
+  // el aviso de cambio de turno y la lectura automática de la siguiente pista, para que
+  // se hablen en orden en vez de interrumpirse entre sí.
   useEffect(() => {
-    if (!currentLetter || finished || !canAct) return;
-    if (lastSpokenIndexRef.current === currentIndex) return;
-    lastSpokenIndexRef.current = currentIndex;
-    speech.stop();
-    if (tts.supported && tts.autoRead) {
-      tts.speak(currentLetter.clue);
+    const phrases: string[] = [];
+
+    if (outcomeEvent !== undefined) {
+      // El padre indica explícitamente el resultado (modo local: este componente se
+      // remonta al cambiar el turno, así que no puede detectarlo por sí solo).
+      if (outcomeEvent && outcomeEvent.seq !== lastHandledEventSeqRef.current) {
+        lastHandledEventSeqRef.current = outcomeEvent.seq;
+        if (outcomeEvent.playerName === playerName && (outcomeEvent.result === 'correct' || outcomeEvent.result === 'wrong')) {
+          setFlash(outcomeEvent.result);
+          if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+          flashTimeoutRef.current = setTimeout(() => setFlash(null), 900);
+        }
+        pushOutcomePhrases(phrases, outcomeEvent.result, outcomeEvent.correctCount, outcomeEvent.playerName);
+      }
+    } else if (pendingIndexRef.current !== null) {
+      // Modo en red: este componente nunca se remonta, así que detecta el resultado
+      // comparando el índice pendiente con el progreso recibido.
+      const resolved = progress[pendingIndexRef.current];
+      if (resolved?.state === 'correct' || resolved?.state === 'wrong' || resolved?.state === 'passed') {
+        pendingIndexRef.current = null;
+        if (resolved.state === 'correct' || resolved.state === 'wrong') {
+          setFlash(resolved.state);
+          if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+          flashTimeoutRef.current = setTimeout(() => setFlash(null), 900);
+        }
+        pushOutcomePhrases(phrases, resolved.state, correctCount, playerName);
+      }
+    }
+
+    if (activePlayerName && activePlayerName !== lastActiveNameRef.current) {
+      lastActiveNameRef.current = activePlayerName;
+      if (tts.narrate) phrases.push(`Turno de ${activePlayerName}`);
+    }
+
+    if (currentLetter && !finished && canAct && lastSpokenIndexRef.current !== currentIndex) {
+      lastSpokenIndexRef.current = currentIndex;
+      if (tts.autoRead) phrases.push(currentLetter.clue);
+    }
+
+    if (phrases.length > 0 && tts.supported) {
+      speech.stop();
+      phrases.forEach((phrase, i) => tts.speak(phrase, { interrupt: i === 0 }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIndex, finished, canAct]);
+  }, [progress, currentIndex, canAct, finished, activePlayerName, outcomeEvent]);
 
   if (!currentLetter) return null;
 
@@ -92,6 +162,7 @@ export default function RoscoPlayer({
   function pass() {
     if (finished || !canAct) return;
     speech.stop();
+    pendingIndexRef.current = currentIndex;
     onPass();
   }
 
@@ -186,6 +257,14 @@ export default function RoscoPlayer({
                     onChange={(e) => tts.setAutoRead(e.target.checked)}
                   />
                   Leer pistas automáticamente
+                </label>
+                <label className="tts-auto-label">
+                  <input
+                    type="checkbox"
+                    checked={tts.narrate}
+                    onChange={(e) => tts.setNarrate(e.target.checked)}
+                  />
+                  Narración (aciertos, fallos y turnos)
                 </label>
                 {tts.silentWarning && (
                   <p className="tts-warning">

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 const RATE_STORAGE_KEY = 'rosco:tts-rate';
 const AUTO_STORAGE_KEY = 'rosco:tts-auto';
+const NARRATE_STORAGE_KEY = 'rosco:tts-narrate';
 const MIN_RATE = 0.5;
 const MAX_RATE = 2;
 const DEFAULT_RATE = 1;
@@ -19,6 +20,12 @@ function readStoredAutoRead(): boolean {
   return stored === null ? true : stored === '1';
 }
 
+function readStoredNarrate(): boolean {
+  if (typeof window === 'undefined') return true;
+  const stored = window.localStorage.getItem(NARRATE_STORAGE_KEY);
+  return stored === null ? true : stored === '1';
+}
+
 function pickSpanishVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   return (
     voices.find((v) => v.lang?.toLowerCase() === 'es-es') ||
@@ -31,6 +38,7 @@ export function useSpeechSynthesis() {
   const supported = typeof window !== 'undefined' && 'speechSynthesis' in window;
   const [rate, setRateState] = useState<number>(readStoredRate);
   const [autoRead, setAutoReadState] = useState<boolean>(readStoredAutoRead);
+  const [narrate, setNarrateState] = useState<boolean>(readStoredNarrate);
   const [speaking, setSpeaking] = useState(false);
   const [voicesReady, setVoicesReady] = useState(false);
   const [silentWarning, setSilentWarning] = useState(false);
@@ -63,6 +71,11 @@ export function useSpeechSynthesis() {
     window.localStorage.setItem(AUTO_STORAGE_KEY, value ? '1' : '0');
   }, []);
 
+  const setNarrate = useCallback((value: boolean) => {
+    setNarrateState(value);
+    window.localStorage.setItem(NARRATE_STORAGE_KEY, value ? '1' : '0');
+  }, []);
+
   const clearStartTimeout = useCallback(() => {
     if (startTimeoutRef.current) {
       clearTimeout(startTimeoutRef.current);
@@ -71,11 +84,14 @@ export function useSpeechSynthesis() {
   }, []);
 
   const speak = useCallback(
-    (text: string) => {
+    (text: string, options?: { interrupt?: boolean }) => {
       if (!supported || !text.trim()) return;
+      const interrupt = options?.interrupt ?? true;
       primedRef.current = true;
       setSilentWarning(false);
-      window.speechSynthesis.cancel();
+      // Al encadenar frases (interrupt: false) no se cancela lo anterior: el navegador
+      // reproduce las utterances en cola una tras otra en orden.
+      if (interrupt) window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'es-ES';
       if (voiceRef.current) utterance.voice = voiceRef.current;
@@ -135,6 +151,8 @@ export function useSpeechSynthesis() {
     setRate,
     autoRead,
     setAutoRead,
+    narrate,
+    setNarrate,
     speaking,
     speak,
     stop,

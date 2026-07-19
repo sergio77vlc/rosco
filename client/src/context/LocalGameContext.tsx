@@ -15,6 +15,13 @@ export interface LocalPlayerState {
 
 export type LocalPhase = 'playing' | 'results';
 
+export interface LocalOutcomeEvent {
+  seq: number;
+  playerName: string;
+  correctCount: number;
+  result: 'correct' | 'wrong' | 'passed';
+}
+
 interface LocalGameState {
   roscoTheme: string;
   roscoDifficulty: Difficulty | null;
@@ -23,6 +30,12 @@ interface LocalGameState {
   activePlayerIndex: number;
   phase: LocalPhase;
   endsAt: number | null;
+  /**
+   * Último acierto/fallo/pasapalabra resuelto. Se expone aparte del progreso del jugador
+   * porque, cuando el turno cambia, la pantalla pasa a mostrar a otro jugador (remonta el
+   * panel de juego) antes de que ese componente pudiera enterarse por sí solo del resultado.
+   */
+  lastEvent: LocalOutcomeEvent | null;
 }
 
 type LocalGameAction =
@@ -44,6 +57,7 @@ const initialState: LocalGameState = {
   activePlayerIndex: 0,
   phase: 'playing',
   endsAt: null,
+  lastEvent: null,
 };
 
 /** Siguiente jugador (dando la vuelta) que todavía no ha terminado su rosco entero. Null si no queda ninguno. */
@@ -79,6 +93,7 @@ function localGameReducer(state: LocalGameState, action: LocalGameAction): Local
         activePlayerIndex: 0,
         phase: 'playing',
         endsAt: Date.now() + action.timerSeconds * 1000,
+        lastEvent: null,
       };
     }
     case 'RESOLVE': {
@@ -92,18 +107,24 @@ function localGameReducer(state: LocalGameState, action: LocalGameAction): Local
         finishedAt: result.finished ? Date.now() : null,
       };
       const players = state.players.map((p, i) => (i === state.activePlayerIndex ? updatedPlayer : p));
+      const lastEvent: LocalOutcomeEvent = {
+        seq: (state.lastEvent?.seq ?? 0) + 1,
+        playerName: player.name,
+        correctCount: updatedPlayer.progress.filter((s) => s === 'correct').length,
+        result: action.resolution,
+      };
 
       // Un acierto conserva el turno (salvo que ya no le queden letras); un fallo o un
       // pasapalabra siempre cede el turno al siguiente jugador, como en el rosco real.
       const keepsTurn = action.resolution === 'correct' && !result.finished;
       if (keepsTurn) {
-        return { ...state, players };
+        return { ...state, players, lastEvent };
       }
       const nextIdx = nextActivePlayerIndex(players, state.activePlayerIndex);
       if (nextIdx === null) {
-        return { ...state, players, phase: 'results', endsAt: null };
+        return { ...state, players, phase: 'results', endsAt: null, lastEvent };
       }
-      return { ...state, players, activePlayerIndex: nextIdx };
+      return { ...state, players, activePlayerIndex: nextIdx, lastEvent };
     }
     case 'TIME_UP':
       return { ...state, phase: 'results', endsAt: null };

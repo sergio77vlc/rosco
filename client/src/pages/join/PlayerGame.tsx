@@ -75,6 +75,7 @@ export default function PlayerGame() {
       wrongCount={player.wrongCount}
       turnLabel={isMyTurn ? '¡Tu turno!' : undefined}
       waitingMessage={!isMyTurn && activePlayer ? `Turno de ${activePlayer.name}...` : 'Esperando turno...'}
+      activePlayerName={activePlayer?.name ?? null}
       headerExtra={
         otherPlayers.length > 0 ? (
           <div className="mini-scoreboard">

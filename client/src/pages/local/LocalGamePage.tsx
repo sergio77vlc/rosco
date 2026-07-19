@@ -11,8 +11,18 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 
 export default function LocalGamePage() {
   const navigate = useNavigate();
-  const { roscoTheme, roscoDifficulty, players, activePlayerIndex, phase, endsAt, submitAnswer, pass, resetGame } =
-    useLocalGame();
+  const {
+    roscoTheme,
+    roscoDifficulty,
+    players,
+    activePlayerIndex,
+    phase,
+    endsAt,
+    lastEvent,
+    submitAnswer,
+    pass,
+    resetGame,
+  } = useLocalGame();
 
   if (!roscoDifficulty || players.length === 0) {
     return (
@@ -81,6 +91,8 @@ export default function LocalGamePage() {
       playerColor={activePlayer.color}
       correctCount={publicActive.correctCount}
       wrongCount={publicActive.wrongCount}
+      activePlayerName={activePlayer.name}
+      outcomeEvent={lastEvent}
       turnLabel="Turno de"
       doneMessage={`¡${activePlayer.name} ha terminado su rosco!`}
       headerExtra={
