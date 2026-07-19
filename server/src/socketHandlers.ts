@@ -1,6 +1,13 @@
 import { nanoid } from 'nanoid';
 import type { Server, Socket } from 'socket.io';
-import { DEFAULT_AVATAR, ROSCO_ALPHABET, answerMatchesLetterRule } from '@rosco/shared';
+import {
+  DEFAULT_AVATAR,
+  ROSCO_ALPHABET,
+  answerMatchesLetterRule,
+  assignRoscos,
+  buildRoscoPool,
+  nextActivePlayerId,
+} from '@rosco/shared';
 import type {
   HostCreateRoomPayload,
   PlayerJoinRoomPayload,
@@ -16,15 +23,9 @@ import {
   getRoom,
   saveRoom,
 } from './rooms.js';
-import {
-  allPlayersFinished,
-  computeRanking,
-  createPlayer,
-  passLetter,
-  submitAnswer,
-  toPublicRoom,
-} from './gameEngine.js';
-import type { ServerRoom } from './roomTypes.js';
+import { computeRanking, createPlayer, passLetter, submitAnswer, toPublicRoom } from './gameEngine.js';
+import { PRESET_ROSCOS } from './roscos/presets.js';
+import type { ServerPlayer, ServerRoom } from './roomTypes.js';
 
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 6;
@@ -52,6 +53,10 @@ function validateRosco(rosco: Rosco): string | null {
   return null;
 }
 
+function sortedPlayers(room: ServerRoom): ServerPlayer[] {
+  return Array.from(room.players.values()).sort((a, b) => a.joinedAt - b.joinedAt);
+}
+
 function broadcastRoomState(io: Server, room: ServerRoom): void {
   io.to(room.code).emit('room:state', toPublicRoom(room));
 }
@@ -59,6 +64,7 @@ function broadcastRoomState(io: Server, room: ServerRoom): void {
 function finishRoom(io: Server, room: ServerRoom): void {
   if (room.status === 'finished') return;
   room.status = 'finished';
+  room.activePlayerId = null;
   if (room.finishTimeout) {
     clearTimeout(room.finishTimeout);
     room.finishTimeout = null;
@@ -67,19 +73,25 @@ function finishRoom(io: Server, room: ServerRoom): void {
   io.to(room.code).emit('game:finished', { ranking: computeRanking(room) });
 }
 
-function maybeAutoFinish(io: Server, room: ServerRoom): void {
-  if (room.status === 'playing' && allPlayersFinished(room)) {
-    finishRoom(io, room);
-  }
-}
-
 function startGame(io: Server, room: ServerRoom): void {
   room.status = 'playing';
   room.startedAt = Date.now();
   room.endsAt = room.startedAt + room.timerSeconds * 1000;
+  room.activePlayerId = nextActivePlayerId(sortedPlayers(room), null);
   room.finishTimeout = setTimeout(() => finishRoom(io, room), room.timerSeconds * 1000);
   broadcastRoomState(io, room);
   io.to(room.code).emit('game:started', { startedAt: room.startedAt, endsAt: room.endsAt });
+}
+
+/** Tras resolver una letra, conserva el turno (acierto sin terminar) o lo pasa al siguiente jugador activo. */
+function advanceTurn(io: Server, room: ServerRoom, player: ServerPlayer, keepsTurn: boolean): void {
+  if (!keepsTurn) {
+    room.activePlayerId = nextActivePlayerId(sortedPlayers(room), player.id);
+  }
+  broadcastRoomState(io, room);
+  if (room.activePlayerId === null) {
+    finishRoom(io, room);
+  }
 }
 
 export function registerSocketHandlers(io: Server, socket: Socket): void {
@@ -96,15 +108,19 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
         return;
       }
       const code = createRoomCode();
+      const roscoPool = buildRoscoPool(PRESET_ROSCOS, payload.rosco.theme, payload.rosco.difficulty, payload.rosco);
       const room: ServerRoom = {
         code,
         hostSocketId: socket.id,
         status: 'lobby',
         maxPlayers,
-        rosco: payload.rosco,
+        roscoTheme: payload.rosco.theme,
+        roscoDifficulty: payload.rosco.difficulty,
+        roscoPool,
         timerSeconds,
         startedAt: null,
         endsAt: null,
+        activePlayerId: null,
         players: new Map(),
         finishTimeout: null,
       };
@@ -153,13 +169,14 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
     const avatar = typeof payload.avatar === 'string' && payload.avatar.length <= MAX_AVATAR_LENGTH
       ? payload.avatar
       : DEFAULT_AVATAR;
-    const player = createPlayer(nanoid(8), socket.id, name, payload.color, avatar, room.rosco.letters.length);
+    // Cada jugador recibe un rosco distinto (mismo tema y dificultad) del banco de la sala.
+    const assignedRosco = assignRoscos(room.roscoPool, room.players.size + 1)[room.players.size];
+    const player = createPlayer(nanoid(8), socket.id, name, payload.color, avatar, assignedRosco);
     room.players.set(player.id, player);
     socket.join(room.code);
     ack?.({ ok: true, playerId: player.id, room: toPublicRoom(room) });
 
     if (room.players.size >= room.maxPlayers) {
-      // La sala se ha llenado (incluye el caso de partidas de 1 jugador): empieza sin esperar al anfitrión.
       startGame(io, room);
     } else {
       broadcastRoomState(io, room);
@@ -170,20 +187,18 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
     const room = getRoom(payload.code);
     if (!room || room.status !== 'playing') return;
     const player = Array.from(room.players.values()).find((p) => p.socketId === socket.id);
-    if (!player) return;
-    submitAnswer(room, player, payload.answerText);
-    broadcastRoomState(io, room);
-    maybeAutoFinish(io, room);
+    if (!player || player.id !== room.activePlayerId) return;
+    const { correct, finished } = submitAnswer(player, payload.answerText);
+    advanceTurn(io, room, player, correct && !finished);
   });
 
   socket.on('player:pass', (payload: PlayerPassPayload) => {
     const room = getRoom(payload.code);
     if (!room || room.status !== 'playing') return;
     const player = Array.from(room.players.values()).find((p) => p.socketId === socket.id);
-    if (!player) return;
-    passLetter(room, player);
-    broadcastRoomState(io, room);
-    maybeAutoFinish(io, room);
+    if (!player || player.id !== room.activePlayerId) return;
+    passLetter(player);
+    advanceTurn(io, room, player, false);
   });
 
   socket.on('disconnect', () => {
@@ -197,7 +212,12 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
         deleteRoom(playerRoom.code);
         return;
       }
-      broadcastRoomState(io, playerRoom);
+      // Si al jugador que se ha ido le tocaba jugar, se pasa el turno para no bloquear la partida.
+      if (player && playerRoom.status === 'playing' && playerRoom.activePlayerId === player.id) {
+        advanceTurn(io, playerRoom, player, false);
+      } else {
+        broadcastRoomState(io, playerRoom);
+      }
       return;
     }
     const hostRoom = findRoomByHostSocket(socket.id);

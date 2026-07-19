@@ -1,4 +1,4 @@
-import type { LetterState, Rosco, RoomStatus } from '@rosco/shared';
+import type { Difficulty, LetterState, Rosco, RoomStatus } from '@rosco/shared';
 
 export interface ServerPlayer {
   id: string;
@@ -7,6 +7,7 @@ export interface ServerPlayer {
   color: string;
   avatar: string;
   connected: boolean;
+  rosco: Rosco;
   progress: LetterState[];
   currentIndex: number;
   finishedAt: number | null;
@@ -18,10 +19,13 @@ export interface ServerRoom {
   hostSocketId: string;
   status: RoomStatus;
   maxPlayers: number;
-  rosco: Rosco;
+  roscoTheme: string;
+  roscoDifficulty: Difficulty;
+  roscoPool: Rosco[];
   timerSeconds: number;
   startedAt: number | null;
   endsAt: number | null;
+  activePlayerId: string | null;
   players: Map<string, ServerPlayer>;
   finishTimeout: NodeJS.Timeout | null;
 }

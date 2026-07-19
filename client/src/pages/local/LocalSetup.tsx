@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PLAYER_AVATARS, PLAYER_COLORS, type Rosco } from '@rosco/shared';
+import { PLAYER_AVATARS, PLAYER_COLORS, buildRoscoPool, type Rosco } from '@rosco/shared';
 import RoscoPicker from '../../components/RoscoPicker';
 import AvatarPicker from '../../components/AvatarPicker';
 import AvatarView from '../../components/AvatarView';
@@ -31,6 +31,14 @@ export default function LocalSetup() {
   const [timerSeconds, setTimerSeconds] = useState(120);
   const [selectedRosco, setSelectedRosco] = useState<Rosco | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [allPresets, setAllPresets] = useState<Rosco[]>([]);
+
+  useEffect(() => {
+    fetch('/api/rosco/presets')
+      .then((res) => res.json())
+      .then((data) => setAllPresets(data.roscos ?? []))
+      .catch(() => setAllPresets([]));
+  }, []);
 
   function changePlayerCount(next: number) {
     const clamped = Math.min(6, Math.max(1, next));
@@ -63,7 +71,8 @@ export default function LocalSetup() {
       color: colors[i],
       avatar: avatars[i],
     }));
-    startGame(selectedRosco, timerSeconds, players);
+    const roscoPool = buildRoscoPool(allPresets, selectedRosco.theme, selectedRosco.difficulty, selectedRosco);
+    startGame(roscoPool, timerSeconds, players);
     navigate('/local/play');
   }
 

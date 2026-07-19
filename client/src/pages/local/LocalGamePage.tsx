@@ -5,14 +5,16 @@ import RoscoPlayer from '../../components/RoscoPlayer';
 import { useLocalGame } from '../../context/LocalGameContext';
 import { rankPlayers } from '../../utils/rank';
 import { toPlayerPublic } from '../../utils/localPlayer';
+import { DIFFICULTY_ICONS, DIFFICULTY_LABELS, categoryInfo } from '../../constants';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 export default function LocalGamePage() {
   const navigate = useNavigate();
-  const { rosco, players, activePlayerIndex, phase, endsAt, submitAnswer, pass, resetGame } = useLocalGame();
+  const { roscoTheme, roscoDifficulty, players, activePlayerIndex, phase, endsAt, submitAnswer, pass, resetGame } =
+    useLocalGame();
 
-  if (!rosco || players.length === 0) {
+  if (!roscoDifficulty || players.length === 0) {
     return (
       <div className="screen screen-center">
         <p className="app-subtitle">No hay ninguna partida local configurada.</p>
@@ -23,12 +25,16 @@ export default function LocalGamePage() {
     );
   }
 
+  const themeInfo = categoryInfo(roscoTheme);
+
   if (phase === 'results') {
     const ranking = rankPlayers(players.map(toPlayerPublic));
     return (
       <div className="screen screen-center">
         <h1 className="screen-title">Resultados</h1>
-        <h2 className="app-subtitle">{rosco.title}</h2>
+        <h2 className="app-subtitle">
+          {themeInfo.icon} {themeInfo.label} · {DIFFICULTY_ICONS[roscoDifficulty]} {DIFFICULTY_LABELS[roscoDifficulty]}
+        </h2>
         <div className="ranking-list">
           {ranking.map((r) => (
             <div key={r.playerId} className="ranking-row">
@@ -63,7 +69,7 @@ export default function LocalGamePage() {
   return (
     <RoscoPlayer
       key={`player-${activePlayerIndex}`}
-      letters={rosco.letters}
+      letters={activePlayer.rosco.letters}
       progress={publicActive.progress}
       currentIndex={activePlayer.currentIndex}
       finished={Boolean(activePlayer.finishedAt)}

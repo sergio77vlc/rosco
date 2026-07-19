@@ -24,12 +24,16 @@ export interface PlayerProgressEntry {
   state: LetterState;
 }
 
+/** Rosco de un jugador tal y como se envía al cliente: sin las respuestas. */
+export type PlayerRoscoView = Omit<Rosco, 'letters'> & { letters: Omit<LetterClue, 'answer'>[] };
+
 export interface PlayerPublic {
   id: string;
   name: string;
   color: string;
   avatar: string;
   connected: boolean;
+  rosco: PlayerRoscoView;
   progress: PlayerProgressEntry[];
   currentIndex: number;
   correctCount: number;
@@ -43,10 +47,12 @@ export interface RoomPublic {
   code: string;
   status: RoomStatus;
   maxPlayers: number;
-  rosco: Omit<Rosco, 'letters'> & { letters: Omit<LetterClue, 'answer'>[] };
+  roscoTheme: string;
+  roscoDifficulty: Difficulty;
   timerSeconds: number;
   startedAt: number | null;
   endsAt: number | null;
+  activePlayerId: string | null;
   players: PlayerPublic[];
 }
 
@@ -59,6 +65,11 @@ export interface RankingEntry {
   wrongCount: number;
   finishedAt: number | null;
   rank: number;
+}
+
+export interface TurnAwarePlayer {
+  id: string;
+  finishedAt: number | null;
 }
 
 // ---- Socket.IO event payloads ----

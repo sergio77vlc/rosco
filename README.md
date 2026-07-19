@@ -11,11 +11,12 @@ Juego web multijugador tipo "Pasapalabra" (rosco). Un dispositivo hospeda la par
 - Roscos predefinidos: 60 roscos completos (25 pistas cada uno, 1.500 pistas en total). El selector los organiza en dos niveles: primero eliges la **categoría** (cultura general, animales, cine, geografía, ciencia, historia, deportes) y luego el **nivel de dificultad** dentro de ella — 30 roscos de cultura general (10 por nivel) y al menos 5 en cada categoría temática.
 - Generación de roscos completos mediante prompt con IA (API de Anthropic/Claude), a partir de un tema y una dificultad.
 - **Avatares**: cada jugador elige su avatar de una lista de emojis, o se hace una foto con la cámara del móvil para usarla como avatar. El avatar aparece en el centro de su rosco y junto a su nombre en todas las pantallas.
-- Cada jugador juega desde su móvil: ve su rosco (con su avatar en el centro), la pista activa, y puede responder o pasar (pasapalabra). La pantalla de juego está pensada para verse entera de un vistazo en un móvil, sin necesidad de hacer scroll: rueda, turno, aciertos, fallos, cronómetro, pista y botones caben siempre en pantalla.
-- Lectura de la pista en voz alta (TTS) con velocidad ajustable y opción de lectura automática al cambiar de letra.
+- **Turnos y roscos individuales en todos los modos**: cada jugador de una partida juega su propio rosco, distinto al de los demás pero de la misma categoría y dificultad (se reparten desde el banco de roscos de esa categoría/nivel). Solo un jugador tiene el turno a la vez: si acierta, lo conserva; si falla o pasa palabra, el turno pasa automáticamente al siguiente jugador. Esto aplica igual en partidas en red (varios móviles) que en el modo local (un solo dispositivo).
+- Cada jugador juega desde su móvil: ve su propio rosco (con su avatar en el centro), la pista activa, y puede responder o pasar (pasapalabra) solo cuando es su turno — mientras espera, ve claramente de quién es el turno y el marcador con el progreso de los demás. La pantalla de juego está pensada para verse entera de un vistazo en un móvil, sin necesidad de hacer scroll: rueda, turno, aciertos, fallos, cronómetro, pista y botones caben siempre en pantalla.
+- Lectura de la pista en voz alta (TTS) con velocidad ajustable y opción de lectura automática al cambiar de letra (solo se lee cuando es el turno del jugador).
 - Respuesta por voz: un botón de micrófono dicta la respuesta directamente al campo de texto (reconocimiento de voz del navegador).
-- El anfitrión ve **todos los roscos de todos los jugadores en tiempo real**, en la misma pantalla, con cronómetro y ranking en vivo.
-- **Modo local ("Jugar en este dispositivo")**: hasta 6 jugadores se turnan en el mismo móvil o pantalla, sin necesidad de red ni de otros dispositivos. Cada jugador tiene su propio rosco, pero solo uno responde a la vez: si acierta, sigue él; si falla o pasa palabra, el turno pasa automáticamente al siguiente. Un indicador de turno y un marcador con todos los jugadores están siempre visibles en pantalla.
+- El anfitrión ve **el rosco individual de cada jugador en tiempo real**, en la misma pantalla, con el turno actual resaltado, cronómetro y ranking en vivo.
+- **Modo local ("Jugar en este dispositivo")**: hasta 6 jugadores se turnan en el mismo móvil o pantalla, sin necesidad de red ni de otros dispositivos. Cada jugador tiene su propio rosco (mismo tema y dificultad que los demás, pero con pistas distintas), y solo uno responde a la vez: si acierta, sigue él; si falla o pasa palabra, el turno pasa automáticamente al siguiente. Un indicador de turno y un marcador con todos los jugadores están siempre visibles en pantalla.
 - Resultados finales con ranking (aciertos, fallos y tiempo).
 
 ## Arquitectura
@@ -197,13 +198,14 @@ client/src/components/AvatarPicker.tsx Selector de avatar: lista de emojis o fot
 client/src/components/AvatarView.tsx  Renderiza un avatar (emoji o foto) de forma consistente en toda la app
 client/src/hooks/useSpeechSynthesis.ts   Lectura de la pista en voz alta (TTS), velocidad ajustable
 client/src/hooks/useSpeechRecognition.ts Dictado de la respuesta por micrófono (STT)
-shared/src/roscoProgress.ts  Motor de turnos (avanzar letra, resolver acierto/fallo/pasapalabra), usado por el servidor y por el modo local del cliente
+shared/src/roscoProgress.ts    Motor de turnos: avanzar letra (resolver acierto/fallo/pasapalabra) y turno entre jugadores (nextActivePlayerId), usado por el servidor y por el modo local del cliente
+shared/src/roscoAssignment.ts  Reparte un rosco distinto a cada jugador desde el banco de la misma categoría/dificultad (buildRoscoPool, assignRoscos)
 ```
 
 ## Notas y limitaciones conocidas
 
 - El estado de las partidas vive en memoria del servidor: si el proceso se reinicia, las partidas en curso se pierden.
 - El anfitrión debe mantener la pestaña abierta durante toda la partida (no hay reconexión automática de la sesión del anfitrión tras recargar la página).
-- Si un jugador se desconecta, su progreso se conserva pero deberá volver a entrar por su cuenta; no hay reconexión automática con la misma sesión.
+- Si un jugador se desconecta, su progreso se conserva pero deberá volver a entrar por su cuenta; no hay reconexión automática con la misma sesión. Si le tocaba el turno en ese momento, se pasa automáticamente al siguiente jugador para no bloquear la partida.
 - La lectura en voz alta y el dictado por micrófono usan las APIs nativas del navegador (Web Speech API), sin coste ni configuración adicional. El reconocimiento de voz solo está disponible en navegadores compatibles (Chrome/Android funcionan bien; Safari/iOS no lo soporta) y, como el acceso al micrófono, requiere que la web se sirva por HTTPS.
 - La lectura en voz alta depende de que el sistema operativo/navegador tenga voces de síntesis instaladas. En Linux de escritorio (Chrome/Brave/Chromium) suele no haber ninguna por defecto, y Brave además puede bloquear la lista de voces con su protección "Shields" contra fingerprinting — en ambos casos la app avisa en pantalla si no consigue reproducir audio. En Android e iOS las voces vienen instaladas de serie y funciona sin configuración adicional.

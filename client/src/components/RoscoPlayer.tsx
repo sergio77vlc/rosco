@@ -22,6 +22,8 @@ interface RoscoPlayerProps {
   wrongCount: number;
   turnLabel?: string;
   headerExtra?: React.ReactNode;
+  canAct?: boolean;
+  waitingMessage?: string;
 }
 
 export default function RoscoPlayer({
@@ -40,6 +42,8 @@ export default function RoscoPlayer({
   wrongCount,
   turnLabel,
   headerExtra,
+  canAct = true,
+  waitingMessage = 'Esperando turno...',
 }: RoscoPlayerProps) {
   const [answerText, setAnswerText] = useState('');
   const [flash, setFlash] = useState<'correct' | 'wrong' | null>(null);
@@ -65,7 +69,7 @@ export default function RoscoPlayer({
   }, [progress]);
 
   useEffect(() => {
-    if (!currentLetter || finished) return;
+    if (!currentLetter || finished || !canAct) return;
     if (lastSpokenIndexRef.current === currentIndex) return;
     lastSpokenIndexRef.current = currentIndex;
     speech.stop();
@@ -73,12 +77,12 @@ export default function RoscoPlayer({
       tts.speak(currentLetter.clue);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIndex, finished]);
+  }, [currentIndex, finished, canAct]);
 
   if (!currentLetter) return null;
 
   function submit() {
-    if (!answerText.trim() || finished) return;
+    if (!answerText.trim() || finished || !canAct) return;
     speech.stop();
     pendingIndexRef.current = currentIndex;
     onSubmitAnswer(answerText.trim());
@@ -86,7 +90,7 @@ export default function RoscoPlayer({
   }
 
   function pass() {
-    if (finished) return;
+    if (finished || !canAct) return;
     speech.stop();
     onPass();
   }
@@ -193,43 +197,49 @@ export default function RoscoPlayer({
             )}
           </div>
 
-          <form
-            className="answer-form-compact"
-            onSubmit={(e) => {
-              e.preventDefault();
-              submit();
-            }}
-          >
-            <div className="answer-input-row">
-              <input
-                type="text"
-                value={answerText}
-                onChange={(e) => setAnswerText(e.target.value)}
-                placeholder={speech.listening ? 'Escuchando...' : 'Tu respuesta...'}
-                autoFocus
-                autoComplete="off"
-              />
-              {speech.supported && (
-                <button
-                  type="button"
-                  className={`mic-button ${speech.listening ? 'mic-button-active' : ''}`}
-                  onClick={toggleMic}
-                  aria-label="Responder por voz"
-                  title="Responder por voz"
-                >
-                  🎤
+          {canAct ? (
+            <form
+              className="answer-form-compact"
+              onSubmit={(e) => {
+                e.preventDefault();
+                submit();
+              }}
+            >
+              <div className="answer-input-row">
+                <input
+                  type="text"
+                  value={answerText}
+                  onChange={(e) => setAnswerText(e.target.value)}
+                  placeholder={speech.listening ? 'Escuchando...' : 'Tu respuesta...'}
+                  autoFocus
+                  autoComplete="off"
+                />
+                {speech.supported && (
+                  <button
+                    type="button"
+                    className={`mic-button ${speech.listening ? 'mic-button-active' : ''}`}
+                    onClick={toggleMic}
+                    aria-label="Responder por voz"
+                    title="Responder por voz"
+                  >
+                    🎤
+                  </button>
+                )}
+              </div>
+              <div className="answer-buttons">
+                <button className="btn btn-secondary" type="button" onClick={pass}>
+                  ⏭️ Pasapalabra
                 </button>
-              )}
+                <button className="btn btn-primary" type="submit" disabled={!answerText.trim()}>
+                  ✅ Responder
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="answer-form-compact answer-form-waiting">
+              <p className="waiting-turn-message">⏳ {waitingMessage}</p>
             </div>
-            <div className="answer-buttons">
-              <button className="btn btn-secondary" type="button" onClick={pass}>
-                ⏭️ Pasapalabra
-              </button>
-              <button className="btn btn-primary" type="submit" disabled={!answerText.trim()}>
-                ✅ Responder
-              </button>
-            </div>
-          </form>
+          )}
         </>
       )}
     </div>

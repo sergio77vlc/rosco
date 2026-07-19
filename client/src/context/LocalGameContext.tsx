@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useEffect, useReducer, useRef } from 'react';
-import { createInitialProgress, isAnswerCorrect, resolveCurrentLetter } from '@rosco/shared';
-import type { LetterState, Rosco } from '@rosco/shared';
+import { assignRoscos, createInitialProgress, isAnswerCorrect, resolveCurrentLetter } from '@rosco/shared';
+import type { Difficulty, LetterState, Rosco } from '@rosco/shared';
 
 export interface LocalPlayerState {
   id: string;
   name: string;
   color: string;
   avatar: string;
+  rosco: Rosco;
   progress: LetterState[];
   currentIndex: number;
   finishedAt: number | null;
@@ -15,7 +16,8 @@ export interface LocalPlayerState {
 export type LocalPhase = 'playing' | 'results';
 
 interface LocalGameState {
-  rosco: Rosco | null;
+  roscoTheme: string;
+  roscoDifficulty: Difficulty | null;
   timerSeconds: number;
   players: LocalPlayerState[];
   activePlayerIndex: number;
@@ -26,7 +28,7 @@ interface LocalGameState {
 type LocalGameAction =
   | {
       type: 'START_GAME';
-      rosco: Rosco;
+      roscoPool: Rosco[];
       timerSeconds: number;
       players: { name: string; color: string; avatar: string }[];
     }
@@ -35,7 +37,8 @@ type LocalGameAction =
   | { type: 'RESET' };
 
 const initialState: LocalGameState = {
-  rosco: null,
+  roscoTheme: '',
+  roscoDifficulty: null,
   timerSeconds: 120,
   players: [],
   activePlayerIndex: 0,
@@ -56,17 +59,21 @@ function nextActivePlayerIndex(players: LocalPlayerState[], fromIndex: number): 
 function localGameReducer(state: LocalGameState, action: LocalGameAction): LocalGameState {
   switch (action.type) {
     case 'START_GAME': {
+      const roscos = assignRoscos(action.roscoPool, action.players.length);
       const players: LocalPlayerState[] = action.players.map((p, i) => ({
         id: `local-${i}`,
         name: p.name,
         color: p.color,
         avatar: p.avatar,
-        progress: createInitialProgress(action.rosco.letters.length),
+        rosco: roscos[i],
+        progress: createInitialProgress(roscos[i].letters.length),
         currentIndex: 0,
         finishedAt: null,
       }));
+      const first = action.roscoPool[0];
       return {
-        rosco: action.rosco,
+        roscoTheme: first?.theme ?? '',
+        roscoDifficulty: first?.difficulty ?? null,
         timerSeconds: action.timerSeconds,
         players,
         activePlayerIndex: 0,
@@ -109,7 +116,7 @@ function localGameReducer(state: LocalGameState, action: LocalGameAction): Local
 
 interface LocalGameContextValue extends LocalGameState {
   startGame: (
-    rosco: Rosco,
+    roscoPool: Rosco[],
     timerSeconds: number,
     players: { name: string; color: string; avatar: string }[],
   ) => void;
@@ -139,17 +146,17 @@ export function LocalGameProvider({ children }: { children: React.ReactNode }) {
   }, [state.phase, state.endsAt]);
 
   function startGame(
-    rosco: Rosco,
+    roscoPool: Rosco[],
     timerSeconds: number,
     players: { name: string; color: string; avatar: string }[],
   ) {
-    dispatch({ type: 'START_GAME', rosco, timerSeconds, players });
+    dispatch({ type: 'START_GAME', roscoPool, timerSeconds, players });
   }
 
   function submitAnswer(answerText: string) {
     const player = state.players[state.activePlayerIndex];
-    if (!state.rosco || !player || player.finishedAt) return;
-    const clue = state.rosco.letters[player.currentIndex];
+    if (!player || player.finishedAt) return;
+    const clue = player.rosco.letters[player.currentIndex];
     const correct = isAnswerCorrect(answerText, clue.answer);
     dispatch({ type: 'RESOLVE', resolution: correct ? 'correct' : 'wrong' });
   }

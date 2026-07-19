@@ -1,4 +1,4 @@
-import type { LetterState } from './types.js';
+import type { LetterState, TurnAwarePlayer } from './types.js';
 
 export function createInitialProgress(length: number): LetterState[] {
   return Array.from({ length }, () => 'pending' as LetterState);
@@ -34,4 +34,23 @@ export function resolveCurrentLetter(
     return { progress: next, currentIndex, finished: true };
   }
   return { progress: next, currentIndex: nextIndex, finished: false };
+}
+
+/**
+ * Siguiente jugador (dando la vuelta a la lista) que todavía no ha terminado su rosco,
+ * empezando a buscar justo después de `currentId`. Si `currentId` es null, empieza por
+ * el primero de la lista. Devuelve null si no queda ningún jugador activo.
+ */
+export function nextActivePlayerId<T extends TurnAwarePlayer>(
+  players: T[],
+  currentId: string | null,
+): string | null {
+  const n = players.length;
+  if (n === 0) return null;
+  const startIndex = currentId ? players.findIndex((p) => p.id === currentId) : -1;
+  for (let step = 1; step <= n; step++) {
+    const idx = (startIndex + step + n) % n;
+    if (!players[idx].finishedAt) return players[idx].id;
+  }
+  return null;
 }

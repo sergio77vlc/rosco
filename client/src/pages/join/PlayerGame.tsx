@@ -54,12 +54,17 @@ export default function PlayerGame() {
     );
   }
 
+  const isMyTurn = room.activePlayerId === player.id;
+  const activePlayer = room.players.find((p) => p.id === room.activePlayerId);
+  const otherPlayers = room.players.filter((p) => p.id !== player.id);
+
   return (
     <RoscoPlayer
-      letters={room.rosco.letters}
+      letters={player.rosco.letters}
       progress={player.progress}
       currentIndex={player.currentIndex}
       finished={Boolean(player.finishedAt)}
+      canAct={isMyTurn}
       endsAt={room.endsAt}
       onSubmitAnswer={(answerText) => getSocket().emit('player:submitAnswer', { code, answerText })}
       onPass={() => getSocket().emit('player:pass', { code })}
@@ -68,6 +73,28 @@ export default function PlayerGame() {
       playerColor={player.color}
       correctCount={player.correctCount}
       wrongCount={player.wrongCount}
+      turnLabel={isMyTurn ? '¡Tu turno!' : undefined}
+      waitingMessage={!isMyTurn && activePlayer ? `Turno de ${activePlayer.name}...` : 'Esperando turno...'}
+      headerExtra={
+        otherPlayers.length > 0 ? (
+          <div className="mini-scoreboard">
+            {otherPlayers.map((p) => (
+              <div
+                key={p.id}
+                className={`mini-scoreboard-chip ${p.id === room.activePlayerId ? 'mini-scoreboard-chip-active' : ''} ${
+                  p.finishedAt ? 'mini-scoreboard-chip-done' : ''
+                }`}
+                title={`${p.name}: ${p.correctCount} aciertos, ${p.wrongCount} fallos`}
+              >
+                <AvatarView avatar={p.avatar} color={p.color} size={24} />
+                <span>
+                  {p.correctCount}✔ {p.wrongCount}✘
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : null
+      }
     />
   );
 }
