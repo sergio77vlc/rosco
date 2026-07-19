@@ -5,8 +5,9 @@ Juego web multijugador tipo "Pasapalabra" (rosco). Un dispositivo hospeda la par
 ## Funcionalidades
 
 - Pantalla inicial: **hospedar partida**, **unirse escaneando un QR**, o **jugar en el mismo dispositivo** (modo local, sin red).
-- Configuración del anfitrión: número de jugadores (1-6), duración del cronómetro y elección del rosco.
-- La partida arranca automáticamente en cuanto se llena el aforo de jugadores, sin esperar a que el anfitrión pulse nada. Si eliges 1 jugador, no hay ni pantalla de anfitrión ni QR: el mismo dispositivo pasa directo a jugar.
+- Configuración del anfitrión: número de jugadores (2-6), duración del cronómetro y elección del rosco. Para jugar solo (1 jugador) se usa el modo "Jugar en este dispositivo", no hospedar.
+- La partida arranca automáticamente en cuanto se llena el aforo de jugadores, sin esperar a que el anfitrión pulse nada (también se puede empezar antes manualmente).
+- Interruptor **"También soy un jugador"** en la configuración de hospedar: si está desactivado (por defecto), el dispositivo que hospeda es solo un panel espectador que muestra todos los roscos en directo, como un marcador de TV. Si se activa, el anfitrión se une también como un jugador más — configura su propio nombre y avatar, y en cuanto empieza la partida su pantalla pasa a mostrar su propio rosco para jugar, igual que el resto.
 - Roscos predefinidos: 60 roscos completos (25 pistas cada uno, 1.500 pistas en total). El selector los organiza en dos niveles: primero eliges la **categoría** (cultura general, animales, cine, geografía, ciencia, historia, deportes) y luego el **nivel de dificultad** dentro de ella — 30 roscos de cultura general (10 por nivel) y al menos 5 en cada categoría temática.
 - Generación de roscos completos mediante prompt con IA (API de Anthropic/Claude), a partir de un tema y una dificultad.
 - **Avatares**: cada jugador elige su avatar de una lista de emojis, o se hace una foto con la cámara del móvil para usarla como avatar. El avatar aparece en el centro de su rosco y junto a su nombre en todas las pantallas.

@@ -26,7 +26,7 @@ import {
 } from './gameEngine.js';
 import type { ServerRoom } from './roomTypes.js';
 
-const MIN_PLAYERS = 1;
+const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 6;
 const MIN_TIMER_SECONDS = 30;
 const MAX_TIMER_SECONDS = 600;

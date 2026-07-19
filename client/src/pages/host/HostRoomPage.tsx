@@ -1,5 +1,5 @@
-import React from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useGame } from '../../context/GameContext';
 import HostLobby from './HostLobby';
 import HostGame from './HostGame';
@@ -7,7 +7,16 @@ import HostResults from './HostResults';
 
 export default function HostRoomPage() {
   const { code } = useParams<{ code: string }>();
-  const { room } = useGame();
+  const navigate = useNavigate();
+  const { room, playerId } = useGame();
+
+  // Si el anfitrión también se unió como jugador, en cuanto empiece la partida
+  // pasa a jugar su propio rosco en vez de quedarse en el panel de espectador.
+  useEffect(() => {
+    if (room && room.status === 'playing' && playerId) {
+      navigate(`/play/${code}`);
+    }
+  }, [room, playerId, code, navigate]);
 
   if (!room || room.code !== code) {
     return (

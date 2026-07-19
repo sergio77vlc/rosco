@@ -6,16 +6,19 @@ import RoscoPicker from '../../components/RoscoPicker';
 import AvatarPicker from '../../components/AvatarPicker';
 import { TIMER_OPTIONS } from '../../constants';
 
+const MIN_PLAYERS = 2;
+const MAX_PLAYERS = 6;
+
 export default function HostSetup() {
   const navigate = useNavigate();
   const { emitWithAck, setPlayerId } = useGame();
 
   const [maxPlayers, setMaxPlayers] = useState(4);
   const [timerSeconds, setTimerSeconds] = useState(120);
-  const [soloName, setSoloName] = useState('');
-  const [soloColor, setSoloColor] = useState<string>(PLAYER_COLORS[0]);
-  const [soloAvatar, setSoloAvatar] = useState<string>(DEFAULT_AVATAR);
-  const isSolo = maxPlayers === 1;
+  const [hostIsPlayer, setHostIsPlayer] = useState(false);
+  const [hostName, setHostName] = useState('');
+  const [hostColor, setHostColor] = useState<string>(PLAYER_COLORS[0]);
+  const [hostAvatar, setHostAvatar] = useState<string>(DEFAULT_AVATAR);
 
   const [selectedRosco, setSelectedRosco] = useState<Rosco | null>(null);
 
@@ -35,20 +38,16 @@ export default function HostSetup() {
         rosco: selectedRosco,
         timerSeconds,
       });
-      if (isSolo) {
-        // Con un solo jugador no hace falta pantalla de anfitrión/QR: este mismo dispositivo
-        // se une directamente como jugador y la partida arranca sin esperar a nadie.
+      if (hostIsPlayer) {
         const joinRes = await emitWithAck<{ ok: true; playerId: string }>('player:joinRoom', {
           code: res.code,
-          name: soloName.trim() || 'Jugador',
-          color: soloColor,
-          avatar: soloAvatar,
+          name: hostName.trim() || 'Jugador',
+          color: hostColor,
+          avatar: hostAvatar,
         });
         setPlayerId(joinRes.playerId);
-        navigate(`/play/${res.code}`);
-      } else {
-        navigate(`/host/${res.code}`);
       }
+      navigate(`/host/${res.code}`);
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'No se pudo crear la partida.');
     } finally {
@@ -63,47 +62,69 @@ export default function HostSetup() {
       <section className="setup-section">
         <h2>Número de jugadores</h2>
         <div className="stepper">
-          <button className="btn btn-icon" onClick={() => setMaxPlayers((n) => Math.max(1, n - 1))}>
+          <button
+            className="btn btn-icon"
+            onClick={() => setMaxPlayers((n) => Math.max(MIN_PLAYERS, n - 1))}
+          >
             −
           </button>
           <span className="stepper-value">{maxPlayers}</span>
-          <button className="btn btn-icon" onClick={() => setMaxPlayers((n) => Math.min(6, n + 1))}>
+          <button
+            className="btn btn-icon"
+            onClick={() => setMaxPlayers((n) => Math.min(MAX_PLAYERS, n + 1))}
+          >
             +
           </button>
         </div>
-        {isSolo && (
-          <p className="app-subtitle setup-solo-hint">
-            Vas a jugar tú solo: no hará falta código ni pantalla de anfitrión, se empieza directo.
-          </p>
-        )}
       </section>
 
-      {isSolo && (
-        <section className="setup-section">
-          <h2>Tu nombre</h2>
+      <section className="setup-section">
+        <label className="switch-row">
+          <span>
+            <strong>También soy un jugador</strong>
+            <span className="switch-row-hint">
+              {hostIsPlayer
+                ? 'Este dispositivo juega como uno más y no mostrará el panel con todos los roscos.'
+                : 'Este dispositivo será solo el panel que muestra todos los roscos en directo.'}
+            </span>
+          </span>
           <input
-            type="text"
-            value={soloName}
-            onChange={(e) => setSoloName(e.target.value)}
-            placeholder="Nombre"
-            maxLength={20}
-            className="setup-solo-name-input"
+            type="checkbox"
+            className="switch-input"
+            checked={hostIsPlayer}
+            onChange={(e) => setHostIsPlayer(e.target.checked)}
           />
-          <div className="color-picker">
-            {PLAYER_COLORS.map((c) => (
-              <button
-                type="button"
-                key={c}
-                className={`color-swatch ${soloColor === c ? 'color-swatch-active' : ''}`}
-                style={{ backgroundColor: c }}
-                onClick={() => setSoloColor(c)}
-                aria-label={`Elegir color ${c}`}
-              />
-            ))}
+          <span className="switch-track" aria-hidden="true">
+            <span className="switch-thumb" />
+          </span>
+        </label>
+
+        {hostIsPlayer && (
+          <div className="setup-solo-fields">
+            <input
+              type="text"
+              value={hostName}
+              onChange={(e) => setHostName(e.target.value)}
+              placeholder="Tu nombre"
+              maxLength={20}
+              className="setup-solo-name-input"
+            />
+            <div className="color-picker">
+              {PLAYER_COLORS.map((c) => (
+                <button
+                  type="button"
+                  key={c}
+                  className={`color-swatch ${hostColor === c ? 'color-swatch-active' : ''}`}
+                  style={{ backgroundColor: c }}
+                  onClick={() => setHostColor(c)}
+                  aria-label={`Elegir color ${c}`}
+                />
+              ))}
+            </div>
+            <AvatarPicker value={hostAvatar} color={hostColor} onChange={setHostAvatar} />
           </div>
-          <AvatarPicker value={soloAvatar} color={soloColor} onChange={setSoloAvatar} />
-        </section>
-      )}
+        )}
+      </section>
 
       <section className="setup-section">
         <h2>Duración de la partida</h2>
@@ -125,7 +146,7 @@ export default function HostSetup() {
       {createError && <p className="error-text">{createError}</p>}
 
       <button className="btn btn-primary btn-big" onClick={handleCreateRoom} disabled={creating || !selectedRosco}>
-        {creating ? 'Creando...' : isSolo ? '🚀 Empezar a jugar' : '🎬 Crear partida'}
+        {creating ? 'Creando...' : '🎬 Crear partida'}
       </button>
     </div>
   );

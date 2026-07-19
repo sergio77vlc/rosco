@@ -5,6 +5,7 @@ export const TIMER_OPTIONS = [
   { label: '2:00 min', seconds: 120 },
   { label: '3:00 min', seconds: 180 },
   { label: '4:00 min', seconds: 240 },
+  { label: '10:00 min', seconds: 600 },
 ];
 
 export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
