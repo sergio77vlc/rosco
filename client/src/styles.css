@@ -119,9 +119,9 @@ button {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.35), rgba(255, 255, 255, 0.06));
   color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.5);
 }
 
 .btn-tertiary {
@@ -719,13 +719,15 @@ button {
 
 .timer {
   font-size: 1.5rem;
-  font-weight: 800;
-  background: var(--card);
+  font-weight: 900;
+  background: linear-gradient(160deg, rgba(250, 204, 21, 0.22), var(--card));
   padding: 8px 20px;
   border-radius: 14px;
   color: var(--accent);
   white-space: nowrap;
   flex-shrink: 0;
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  box-shadow: 0 0 14px rgba(250, 204, 21, 0.12);
 }
 
 .timer-large {
@@ -733,20 +735,22 @@ button {
 }
 
 .timer-compact {
-  font-size: 0.95rem;
-  padding: 5px 10px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  font-size: 1.3rem;
+  padding: 6px 16px;
+  border-radius: 12px;
 }
 
 .timer-low {
-  color: var(--red);
+  color: #fff;
+  background: linear-gradient(160deg, rgba(239, 68, 68, 0.55), var(--card));
+  border-color: var(--red);
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.45);
   animation: pulse 1s infinite;
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
 }
 
 .rosco-tile-active {
@@ -904,6 +908,7 @@ button {
 }
 
 .rosco-wheel-wrap {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
@@ -912,10 +917,18 @@ button {
   width: 100%;
 }
 
-.rosco-wheel-wrap svg {
+.rosco-wheel-wrap svg.rosco-wheel {
   height: 100%;
   width: auto;
   max-width: 100%;
+}
+
+.inline-presenter {
+  position: absolute;
+  right: 2%;
+  bottom: -6px;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.4));
 }
 
 .game-done-message {
@@ -923,14 +936,59 @@ button {
   margin: 0;
 }
 
+.turn-gate {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  padding: 10px;
+  background: radial-gradient(circle at 50% 20%, rgba(139, 92, 246, 0.25), transparent 70%);
+  border-radius: 20px;
+}
+
+.turn-gate-presenter {
+  margin-bottom: -6px;
+}
+
+.turn-gate-title {
+  margin: 4px 0 0;
+  font-size: 1.3rem;
+  font-weight: 900;
+  background: linear-gradient(90deg, var(--accent), #fff7d6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.turn-gate-hint {
+  margin: 0 0 6px;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.turn-gate-button {
+  font-size: 1.15rem;
+  padding: 16px 40px;
+  animation: gate-button-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes gate-button-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.5); }
+  50% { transform: scale(1.045); box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); }
+}
+
 .clue-card {
   flex: 0 0 auto;
   position: relative;
-  background: var(--card);
+  background: linear-gradient(160deg, rgba(139, 92, 246, 0.12), var(--card));
   border-radius: 16px;
   padding: 10px 12px;
   width: 100%;
-  border: 2px solid transparent;
+  border: 2px solid rgba(139, 92, 246, 0.3);
   box-sizing: border-box;
   transition: border-color 0.2s ease, background 0.2s ease;
 }

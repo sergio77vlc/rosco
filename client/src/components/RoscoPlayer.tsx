@@ -3,8 +3,11 @@ import type { LetterClue, PlayerProgressEntry } from '@rosco/shared';
 import RoscoWheel from './RoscoWheel';
 import Timer from './Timer';
 import AvatarView from './AvatarView';
+import Presenter, { type PresenterExpression } from './Presenter';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
+
+const PRESENTER_EXPRESSION_HOLD_MS = 1800;
 
 const CORRECT_PHRASES = ['¡Correcto!', '¡Sí!', '¡Bien!'];
 const WRONG_PHRASES = ['No', 'Error'];
@@ -109,8 +112,11 @@ export default function RoscoPlayer({
   const [flash, setFlash] = useState<'correct' | 'wrong' | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [revealedAnswer, setRevealedAnswer] = useState<string | null>(null);
+  const [turnReady, setTurnReady] = useState(false);
+  const [presenterExpression, setPresenterExpression] = useState<PresenterExpression>('neutral');
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const presenterExpressionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSpokenIndexRef = useRef<number | null>(null);
   const lastActiveNameRef = useRef<string | null>(null);
   const lastHandledEventSeqRef = useRef<number | null>(null);
@@ -154,6 +160,9 @@ export default function RoscoPlayer({
         setFlash(outcomeEvent.result);
         if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
         flashTimeoutRef.current = setTimeout(() => setFlash(null), 900);
+        setPresenterExpression(outcomeEvent.result === 'correct' ? 'happy' : 'sad');
+        if (presenterExpressionTimeoutRef.current) clearTimeout(presenterExpressionTimeoutRef.current);
+        presenterExpressionTimeoutRef.current = setTimeout(() => setPresenterExpression('neutral'), PRESENTER_EXPRESSION_HOLD_MS);
       }
       if (outcomeEvent.result === 'wrong' && outcomeEvent.correctAnswer) {
         setRevealedAnswer(outcomeEvent.correctAnswer);
@@ -168,7 +177,7 @@ export default function RoscoPlayer({
       if (tts.narrate) phrases.push(`Turno de ${activePlayerName}`);
     }
 
-    if (currentLetter && !finished && canAct && lastSpokenIndexRef.current !== currentIndex) {
+    if (currentLetter && !finished && canAct && turnReady && lastSpokenIndexRef.current !== currentIndex) {
       lastSpokenIndexRef.current = currentIndex;
       if (tts.autoRead) {
         phrases.push(ruleLabel(currentLetter.letter, currentLetter.matchType, true));
@@ -181,12 +190,19 @@ export default function RoscoPlayer({
       phrases.forEach((phrase, i) => tts.speak(phrase, { interrupt: i === 0 }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress, currentIndex, canAct, finished, activePlayerName, outcomeEvent]);
+  }, [progress, currentIndex, canAct, finished, activePlayerName, outcomeEvent, turnReady]);
+
+  // Entre turno y turno hacemos una pausa: no se revela la pregunta hasta que el jugador al
+  // que le toca pulsa el botón de la pantalla de "listo". Si el turno sigue en la misma
+  // persona (acierto que conserva turno) no hace falta pausar de nuevo.
+  useEffect(() => {
+    setTurnReady(false);
+  }, [activePlayerName]);
 
   // Si pasan más de 10s sin que este jugador responda a la misma letra, el presentador mete
   // prisa con frases rápidas, repitiendo cada pocos segundos hasta que conteste o pase.
   useEffect(() => {
-    if (!canAct || finished || !currentLetter) return;
+    if (!canAct || !turnReady || finished || !currentLetter) return;
     if (!tts.supported) return;
     const nudge = () => {
       if (tts.narrate) tts.speak(pickRandom(HURRY_PHRASES), { interrupt: false });
@@ -203,7 +219,7 @@ export default function RoscoPlayer({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIndex, canAct, finished]);
+  }, [currentIndex, canAct, finished, turnReady]);
 
   if (!currentLetter) return null;
 
@@ -262,10 +278,26 @@ export default function RoscoPlayer({
         </div>
       )}
 
-      {canAct ? (
+      {canAct && !turnReady && !finished ? (
+        <div className="turn-gate">
+          <Presenter expression={presenterExpression} speaking={tts.speaking} size={150} className="turn-gate-presenter" />
+          <AvatarView avatar={playerAvatar} color={playerColor} size={64} />
+          <h2 className="turn-gate-title">¡Tu turno, {playerName}!</h2>
+          <p className="turn-gate-hint">Toca cuando estés listo para ver tu pregunta.</p>
+          <button type="button" className="btn btn-primary btn-big turn-gate-button" onClick={() => setTurnReady(true)}>
+            ▶️ ¡Empezar!
+          </button>
+        </div>
+      ) : canAct ? (
         <>
           <div className="rosco-wheel-wrap">
             <RoscoWheel letters={letters} progress={progress} avatar={playerAvatar} color={playerColor} size={360} />
+            <Presenter
+              expression={presenterExpression}
+              speaking={tts.speaking}
+              size={70}
+              className="inline-presenter"
+            />
           </div>
 
           {finished ? (
@@ -399,6 +431,7 @@ export default function RoscoPlayer({
               color={spectateTarget.color}
               size={340}
             />
+            <Presenter expression="neutral" speaking={tts.speaking} size={70} className="inline-presenter" />
           </div>
           {spectateLetter && (
             <div className="clue-card clue-card-spectator">
