@@ -16,7 +16,7 @@ Juego web multijugador tipo "Pasapalabra" (rosco). Un dispositivo hospeda la par
 - Lectura de la pista en voz alta (TTS) con velocidad ajustable y opción de lectura automática al cambiar de letra (solo se lee cuando es el turno del jugador). Antes de cada pista, el presentador indica la regla de la letra ("Empieza por la be", "Contiene la eñe").
 - **Narración**: un interruptor independiente hace que, además de leer las pistas, el TTS comente cada acierto ("¡Correcto!", "¡Sí!", "¡Bien!"), cada fallo ("No", "Error", seguido de "La respuesta correcta es [respuesta]" — que también se muestra en pantalla unos segundos), pasapalabra ("Pasapalabra"), anuncie los cambios de turno ("Turno de [nombre]") y felicite al jugador cada 5 aciertos ("¡Qué bien va [nombre]!"). Si pasan más de 10 segundos sin responder, el presentador mete prisa con frases rápidas ("¡Vamos, contesta!", "¡Rápido!"...) hasta que el jugador conteste o pase. Se puede desactivar sin apagar la lectura de pistas, desde los mismos ajustes de voz (⚙️).
 - Respuesta por voz: un botón de micrófono dicta la respuesta directamente al campo de texto (reconocimiento de voz del navegador).
-- El anfitrión ve **el rosco individual de cada jugador en tiempo real**, en la misma pantalla, con el turno actual resaltado, cronómetro y ranking en vivo.
+- El anfitrión ve **el rosco individual de cada jugador en tiempo real**: el del jugador con el turno actual se muestra en grande, junto a una **presentadora animada de estilo anime** con distintas expresiones (sonríe con los aciertos, se entristece con los fallos) que mueve los labios al anunciar en voz alta cada cambio de turno; el resto de roscos se ven en pequeño debajo, todos a la vez, con cronómetro y ranking en vivo. La voz de la presentadora se puede silenciar con un botón (🔊/🔇).
 - **Modo local ("Jugar en este dispositivo")**: hasta 6 jugadores se turnan en el mismo móvil o pantalla, sin necesidad de red ni de otros dispositivos. Cada jugador tiene su propio rosco (mismo tema y dificultad que los demás, pero con pistas distintas), y solo uno responde a la vez: si acierta, sigue él; si falla o pasa palabra, el turno pasa automáticamente al siguiente. Un indicador de turno y un marcador con todos los jugadores están siempre visibles en pantalla.
 - Resultados finales con ranking (aciertos, fallos y tiempo).
 
@@ -192,6 +192,7 @@ client/src/pages/local/*   Modo "pasa y juega" en el mismo dispositivo (configur
 client/src/context/LocalGameContext.tsx  Estado del modo local (turnos, progreso por jugador), sin red
 client/src/components/RoscoWheel.tsx  Rueda del rosco (SVG), con el avatar del jugador en el centro
 client/src/components/RoscoPlayer.tsx Panel de juego compacto (sin scroll) reutilizado por el modo en red y el modo local
+client/src/components/Presenter.tsx   Presentadora animada (SVG): expresiones y boca sincronizada con el TTS del dashboard del anfitrión
 client/src/components/RoscoPicker.tsx Selector de rosco: nivel de dificultad (predefinido, extraído de la pila viva) o generación con IA
 client/src/components/AvatarPicker.tsx Selector de avatar: lista de emojis o foto con la cámara
 client/src/components/AvatarView.tsx  Renderiza un avatar (emoji o foto) de forma consistente en toda la app

@@ -639,20 +639,52 @@ button {
   margin-bottom: 20px;
 }
 
-.host-wheel-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
+.host-game-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.host-wheel-cell {
+.host-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.presenter-svg {
+  flex-shrink: 0;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.35));
+}
+
+.host-stage-wheel {
   background: var(--card);
-  border-radius: 20px;
-  padding: 16px;
+  border-radius: 24px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.15);
+}
+
+.host-wheel-grid-small {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.host-wheel-cell-small {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
   border: 2px solid transparent;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -662,11 +694,12 @@ button {
   box-shadow: 0 0 0 3px rgba(255, 170, 0, 0.2);
 }
 
-.host-wheel-cell-header {
+.host-wheel-cell-small-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  gap: 4px;
 }
 
 .badge-done {
@@ -678,13 +711,10 @@ button {
   border-radius: 999px;
 }
 
-.badge-turn {
-  background: var(--accent);
-  color: #1a0e00;
-  font-size: 0.7rem;
-  font-weight: 800;
-  padding: 4px 8px;
-  border-radius: 999px;
+.badge-done-small {
+  padding: 2px 6px;
+  font-size: 0.68rem;
+  flex-shrink: 0;
 }
 
 .timer {
