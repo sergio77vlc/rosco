@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PLAYER_AVATARS, PLAYER_COLORS, buildRoscoPool, type Rosco } from '@rosco/shared';
+import { PLAYER_AVATARS, PLAYER_COLORS, type Rosco, type RoscoSelection } from '@rosco/shared';
 import RoscoPicker from '../../components/RoscoPicker';
 import AvatarPicker from '../../components/AvatarPicker';
 import AvatarView from '../../components/AvatarView';
@@ -29,16 +29,9 @@ export default function LocalSetup() {
   const [avatars, setAvatars] = useState<string[]>(() => defaultAvatars(2));
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [timerSeconds, setTimerSeconds] = useState(120);
-  const [selectedRosco, setSelectedRosco] = useState<Rosco | null>(null);
+  const [selectedRosco, setSelectedRosco] = useState<RoscoSelection | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [allPresets, setAllPresets] = useState<Rosco[]>([]);
-
-  useEffect(() => {
-    fetch('/api/rosco/presets')
-      .then((res) => res.json())
-      .then((data) => setAllPresets(data.roscos ?? []))
-      .catch(() => setAllPresets([]));
-  }, []);
+  const [starting, setStarting] = useState(false);
 
   function changePlayerCount(next: number) {
     const clamped = Math.min(6, Math.max(1, next));
@@ -60,7 +53,7 @@ export default function LocalSetup() {
     });
   }
 
-  function handleStart() {
+  async function handleStart() {
     if (!selectedRosco) {
       setError('Elige un rosco antes de empezar.');
       return;
@@ -71,9 +64,28 @@ export default function LocalSetup() {
       color: colors[i],
       avatar: avatars[i],
     }));
-    const roscoPool = buildRoscoPool(allPresets, selectedRosco.theme, selectedRosco.difficulty, selectedRosco);
-    startGame(roscoPool, timerSeconds, players);
-    navigate('/local/play');
+    setStarting(true);
+    try {
+      let roscoPool: Rosco[];
+      if (selectedRosco.mode === 'ai') {
+        roscoPool = [selectedRosco.rosco];
+      } else {
+        const res = await fetch('/api/rosco/draw', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ difficulty: selectedRosco.difficulty, count: playerCount }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'No se pudieron repartir los roscos.');
+        roscoPool = data.roscos;
+      }
+      startGame(roscoPool, timerSeconds, players);
+      navigate('/local/play');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo empezar la partida.');
+    } finally {
+      setStarting(false);
+    }
   }
 
   return (
@@ -165,8 +177,8 @@ export default function LocalSetup() {
 
       {error && <p className="error-text">{error}</p>}
 
-      <button className="btn btn-primary btn-big" onClick={handleStart} disabled={!selectedRosco}>
-        🚀 Empezar
+      <button className="btn btn-primary btn-big" onClick={handleStart} disabled={!selectedRosco || starting}>
+        {starting ? 'Repartiendo roscos...' : '🚀 Empezar'}
       </button>
     </div>
   );

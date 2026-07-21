@@ -1,4 +1,4 @@
-export type Difficulty = 'facil' | 'medio' | 'dificil';
+export type Difficulty = 'medio' | 'dificil';
 
 export type MatchType = 'starts' | 'contains';
 
@@ -72,11 +72,20 @@ export interface TurnAwarePlayer {
   finishedAt: number | null;
 }
 
+/**
+ * Cómo se elige el rosco al configurar una partida: o bien un nivel de dificultad del banco
+ * de preguntas vivo (el servidor reparte roscos distintos extraídos de la pila), o bien un
+ * rosco ya generado por IA (se reparte el mismo entre todos los jugadores).
+ */
+export type RoscoSelection =
+  | { mode: 'preset'; theme: string; difficulty: Difficulty }
+  | { mode: 'ai'; rosco: Rosco };
+
 // ---- Socket.IO event payloads ----
 
 export interface HostCreateRoomPayload {
   maxPlayers: number;
-  rosco: Rosco;
+  selection: RoscoSelection;
   timerSeconds: number;
 }
 

@@ -16,11 +16,9 @@ interface RawLetterEntry {
 function buildPrompt(theme: string, difficulty: Difficulty): string {
   const letters = ROSCO_ALPHABET.join(', ');
   const difficultyHint =
-    difficulty === 'facil'
-      ? 'preguntas sencillas, de conocimiento general y accesibles para cualquier edad'
-      : difficulty === 'medio'
-        ? 'preguntas de dificultad intermedia, requieren cierta cultura general'
-        : 'preguntas difíciles, para jugadores expertos o muy aficionados al tema';
+    difficulty === 'medio'
+      ? 'preguntas de dificultad intermedia, requieren cierta cultura general'
+      : 'preguntas difíciles, para jugadores expertos o muy aficionados al tema';
 
   return `Genera un "rosco" completo en español para un juego tipo Pasapalabra sobre el tema: "${theme}".
 

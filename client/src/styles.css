@@ -226,62 +226,6 @@ button {
   margin: 4px 0 0;
 }
 
-.category-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.category-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  background: linear-gradient(160deg, rgba(139, 92, 246, 0.18), rgba(255, 255, 255, 0.04));
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  padding: 16px 10px;
-  color: var(--text);
-  cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease;
-}
-
-.category-card:active {
-  transform: scale(0.96);
-}
-
-.category-card:hover {
-  border-color: var(--accent-2);
-}
-
-.category-card-icon {
-  font-size: 1.8rem;
-}
-
-.category-card-label {
-  font-weight: 700;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.category-card-count {
-  font-size: 0.72rem;
-  color: var(--text-dim);
-}
-
-.category-back {
-  border: none;
-  background: none;
-  color: var(--accent);
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  padding: 4px 0;
-  margin-top: 8px;
-  align-self: flex-start;
-}
-
 .category-heading {
   margin: 4px 0 10px;
   font-size: 1.1rem;

@@ -8,10 +8,10 @@ Juego web multijugador tipo "Pasapalabra" (rosco). Un dispositivo hospeda la par
 - Configuración del anfitrión: número de jugadores (2-6), duración del cronómetro y elección del rosco. Para jugar solo (1 jugador) se usa el modo "Jugar en este dispositivo", no hospedar.
 - La partida arranca automáticamente en cuanto se llena el aforo de jugadores, sin esperar a que el anfitrión pulse nada (también se puede empezar antes manualmente).
 - Interruptor **"También soy un jugador"** en la configuración de hospedar: si está desactivado (por defecto), el dispositivo que hospeda es solo un panel espectador que muestra todos los roscos en directo, como un marcador de TV. Si se activa, el anfitrión se une también como un jugador más — configura su propio nombre y avatar, y en cuanto empieza la partida su pantalla pasa a mostrar su propio rosco para jugar, igual que el resto.
-- Roscos predefinidos: 60 roscos completos (25 pistas cada uno, 1.500 pistas en total). El selector los organiza en dos niveles: primero eliges la **categoría** (cultura general, animales, cine, geografía, ciencia, historia, deportes) y luego el **nivel de dificultad** dentro de ella — 30 roscos de cultura general (10 por nivel) y al menos 5 en cada categoría temática.
+- **Pila de preguntas en vivo (cultura general)**: en vez de roscos fijos de 25 preguntas, el servidor mantiene una pila de más de 600 preguntas por nivel (normal y difícil), organizadas por letra. Cada partida extrae al vuelo una pregunta distinta por letra y por jugador, sin repetir ninguna dentro de la misma partida; además, la pila recuerda qué preguntas ha usado recientemente (mientras el servidor siga encendido) para tardar lo máximo posible en repetir una pregunta entre partidas sucesivas — solo vuelve a ofrecer una ya usada cuando se ha agotado toda la pila de esa letra. El selector solo pide elegir el **nivel de dificultad** (normal o difícil); de momento el contenido es solo de cultura general.
 - Generación de roscos completos mediante prompt con IA (API de Anthropic/Claude), a partir de un tema y una dificultad.
 - **Avatares**: cada jugador elige su avatar de una lista de emojis, o se hace una foto con la cámara del móvil para usarla como avatar. El avatar aparece en el centro de su rosco y junto a su nombre en todas las pantallas.
-- **Turnos y roscos individuales en todos los modos**: cada jugador de una partida juega su propio rosco, distinto al de los demás pero de la misma categoría y dificultad (se reparten desde el banco de roscos de esa categoría/nivel). Solo un jugador tiene el turno a la vez: si acierta, lo conserva; si falla o pasa palabra, el turno pasa automáticamente al siguiente jugador. Esto aplica igual en partidas en red (varios móviles) que en el modo local (un solo dispositivo).
+- **Turnos y roscos individuales en todos los modos**: cada jugador de una partida juega su propio rosco, extraído de la pila viva con preguntas distintas a las de los demás pero de la misma dificultad. Solo un jugador tiene el turno a la vez: si acierta, lo conserva; si falla o pasa palabra, el turno pasa automáticamente al siguiente jugador. Esto aplica igual en partidas en red (varios móviles) que en el modo local (un solo dispositivo).
 - Cada jugador juega desde su móvil: ve su propio rosco (con su avatar en el centro), la pista activa, y puede responder o pasar (pasapalabra) solo cuando es su turno — mientras espera, ve claramente de quién es el turno y el marcador con el progreso de los demás. La pantalla de juego está pensada para verse entera de un vistazo en un móvil, sin necesidad de hacer scroll: rueda, turno, aciertos, fallos, cronómetro, pista y botones caben siempre en pantalla.
 - Lectura de la pista en voz alta (TTS) con velocidad ajustable y opción de lectura automática al cambiar de letra (solo se lee cuando es el turno del jugador).
 - **Narración**: un interruptor independiente hace que, además de leer las pistas, el TTS comente cada acierto ("¡Correcto!", "¡Sí!", "¡Bien!"), cada fallo ("No", "Error") o pasapalabra ("Pasapalabra"), anuncie los cambios de turno ("Turno de [nombre]") y felicite al jugador cada 5 aciertos ("¡Qué bien va [nombre]!"). Se puede desactivar sin apagar la lectura de pistas, desde los mismos ajustes de voz (⚙️).
@@ -27,8 +27,6 @@ Monorepo con npm workspaces:
 - `shared/` — tipos TypeScript y lógica compartida (alfabeto del rosco, normalización/validación de respuestas).
 - `server/` — Node.js + Express + Socket.IO. Gestiona las salas en memoria, el motor del juego (turnos, pasapalabra, corrección de respuestas, ranking) y la generación de roscos con IA. Sirve también los archivos estáticos del cliente en producción.
 - `client/` — React + Vite. Interfaz para el anfitrión (configuración, sala de espera con QR, dashboard en vivo, resultados) y para los jugadores (unirse, escanear QR, jugar el rosco).
-
-Todos los jugadores de una partida juegan el mismo rosco (mismas pistas); cada uno con su propio progreso, lo que permite comparar los roscos en la misma pantalla del anfitrión en tiempo real.
 
 ## Requisitos
 
@@ -180,9 +178,9 @@ shared/src/types.ts         Tipos compartidos (Rosco, Room, Player, eventos de S
 shared/src/roscoLetters.ts  Alfabeto del rosco (25 letras) y reglas de "empieza por" / "contiene"
 shared/src/answerCheck.ts   Normalización y comparación de respuestas
 
-server/src/roscos/builder.ts        Helper buildRosco() con validación de reglas de letra
-server/src/roscos/presets.ts        Junta todos los roscos predefinidos por categoría
-server/src/roscos/data/*.ts         Banco de 60 roscos predefinidos, un fichero por categoría/tanda
+server/src/roscos/bank.ts            Tipo QuestionBank y validador buildQuestionBank() (reglas de letra, sin duplicados)
+server/src/roscos/pool.ts            drawRoscos(): extrae roscos de la pila viva sin repetir preguntas dentro de la partida, con colas barajadas por letra que minimizan la repetición entre partidas sucesivas
+server/src/roscos/data/*.ts          Pilas de preguntas de cultura general (normal y difícil), +600 preguntas cada una, organizadas por letra
 server/src/ai/generateRosco.ts Generación de roscos con la API de Anthropic
 server/src/gameEngine.ts      Motor del juego: turnos, pasapalabra, corrección, ranking
 server/src/socketHandlers.ts  Eventos de Socket.IO (host y jugadores)
@@ -194,18 +192,18 @@ client/src/pages/local/*   Modo "pasa y juega" en el mismo dispositivo (configur
 client/src/context/LocalGameContext.tsx  Estado del modo local (turnos, progreso por jugador), sin red
 client/src/components/RoscoWheel.tsx  Rueda del rosco (SVG), con el avatar del jugador en el centro
 client/src/components/RoscoPlayer.tsx Panel de juego compacto (sin scroll) reutilizado por el modo en red y el modo local
-client/src/components/RoscoPicker.tsx Selector de rosco en dos niveles: categoría → dificultad (predefinido o IA)
+client/src/components/RoscoPicker.tsx Selector de rosco: nivel de dificultad (predefinido, extraído de la pila viva) o generación con IA
 client/src/components/AvatarPicker.tsx Selector de avatar: lista de emojis o foto con la cámara
 client/src/components/AvatarView.tsx  Renderiza un avatar (emoji o foto) de forma consistente en toda la app
 client/src/hooks/useSpeechSynthesis.ts   Lectura de la pista en voz alta (TTS), velocidad ajustable
 client/src/hooks/useSpeechRecognition.ts Dictado de la respuesta por micrófono (STT)
 shared/src/roscoProgress.ts    Motor de turnos: avanzar letra (resolver acierto/fallo/pasapalabra) y turno entre jugadores (nextActivePlayerId), usado por el servidor y por el modo local del cliente
-shared/src/roscoAssignment.ts  Reparte un rosco distinto a cada jugador desde el banco de la misma categoría/dificultad (buildRoscoPool, assignRoscos)
+shared/src/roscoAssignment.ts  assignRoscos(): reparte los roscos de un pool entre los jugadores de una partida
 ```
 
 ## Notas y limitaciones conocidas
 
-- El estado de las partidas vive en memoria del servidor: si el proceso se reinicia, las partidas en curso se pierden.
+- El estado de las partidas, y también el registro de qué preguntas se han usado recientemente en cada letra/dificultad para evitar repetirlas, viven en memoria del servidor: si el proceso se reinicia, las partidas en curso se pierden y las pilas de preguntas "olvidan" el progreso por el que iban (vuelven a barajarse desde el principio).
 - El anfitrión debe mantener la pestaña abierta durante toda la partida (no hay reconexión automática de la sesión del anfitrión tras recargar la página).
 - Si un jugador se desconecta, su progreso se conserva pero deberá volver a entrar por su cuenta; no hay reconexión automática con la misma sesión. Si le tocaba el turno en ese momento, se pasa automáticamente al siguiente jugador para no bloquear la partida.
 - La lectura en voz alta y el dictado por micrófono usan las APIs nativas del navegador (Web Speech API), sin coste ni configuración adicional. El reconocimiento de voz solo está disponible en navegadores compatibles (Chrome/Android funcionan bien; Safari/iOS no lo soporta) y, como el acceso al micrófono, requiere que la web se sirva por HTTPS.

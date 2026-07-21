@@ -6,9 +6,12 @@ import cors from 'cors';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import type { Difficulty } from '@rosco/shared';
-import { PRESET_ROSCOS } from './roscos/presets.js';
+import { drawRoscos } from './roscos/pool.js';
 import { generateRoscoWithAI, RoscoGenerationError } from './ai/generateRosco.js';
 import { registerSocketHandlers } from './socketHandlers.js';
+
+const VALID_DIFFICULTIES: Difficulty[] = ['medio', 'dificil'];
+const MAX_DRAW_COUNT = 6;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 4000;
@@ -20,14 +23,23 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get('/api/rosco/presets', (_req, res) => {
-  res.json({ roscos: PRESET_ROSCOS });
+app.post('/api/rosco/draw', (req, res) => {
+  const { difficulty, count } = req.body ?? {};
+  if (!VALID_DIFFICULTIES.includes(difficulty)) {
+    res.status(400).json({ error: 'Petición inválida: "difficulty" no es válida.' });
+    return;
+  }
+  const n = Math.floor(Number(count));
+  if (!Number.isFinite(n) || n < 1 || n > MAX_DRAW_COUNT) {
+    res.status(400).json({ error: `"count" debe ser un número entre 1 y ${MAX_DRAW_COUNT}.` });
+    return;
+  }
+  res.json({ roscos: drawRoscos(difficulty as Difficulty, n) });
 });
 
 app.post('/api/rosco/generate', async (req, res) => {
   const { theme, difficulty } = req.body ?? {};
-  const validDifficulties: Difficulty[] = ['facil', 'medio', 'dificil'];
-  if (typeof theme !== 'string' || !validDifficulties.includes(difficulty)) {
+  if (typeof theme !== 'string' || !VALID_DIFFICULTIES.includes(difficulty)) {
     res.status(400).json({ error: 'Petición inválida: falta "theme" o "difficulty" no es válido.' });
     return;
   }

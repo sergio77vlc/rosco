@@ -1,14 +1,8 @@
 import { nanoid } from 'nanoid';
 import type { Server, Socket } from 'socket.io';
-import {
-  DEFAULT_AVATAR,
-  ROSCO_ALPHABET,
-  answerMatchesLetterRule,
-  assignRoscos,
-  buildRoscoPool,
-  nextActivePlayerId,
-} from '@rosco/shared';
+import { DEFAULT_AVATAR, ROSCO_ALPHABET, answerMatchesLetterRule, nextActivePlayerId } from '@rosco/shared';
 import type {
+  Difficulty,
   HostCreateRoomPayload,
   PlayerJoinRoomPayload,
   PlayerPassPayload,
@@ -24,7 +18,7 @@ import {
   saveRoom,
 } from './rooms.js';
 import { computeRanking, createPlayer, passLetter, submitAnswer, toPublicRoom } from './gameEngine.js';
-import { PRESET_ROSCOS } from './roscos/presets.js';
+import { drawRoscos } from './roscos/pool.js';
 import type { ServerPlayer, ServerRoom } from './roomTypes.js';
 
 const MIN_PLAYERS = 2;
@@ -102,20 +96,37 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
         MAX_TIMER_SECONDS,
         Math.max(MIN_TIMER_SECONDS, Math.floor(payload.timerSeconds)),
       );
-      const roscoError = validateRosco(payload.rosco);
-      if (roscoError) {
-        ack?.({ ok: false, reason: roscoError });
+      const selection = payload.selection;
+      let roscoPool: Rosco[];
+      let roscoTheme: string;
+      let roscoDifficulty: Difficulty;
+      if (selection?.mode === 'ai') {
+        const roscoError = validateRosco(selection.rosco);
+        if (roscoError) {
+          ack?.({ ok: false, reason: roscoError });
+          return;
+        }
+        // Un rosco de IA es único (no hay pila de la que extraer variantes): se reparte el mismo a todos.
+        roscoPool = Array.from({ length: maxPlayers }, () => selection.rosco);
+        roscoTheme = selection.rosco.theme;
+        roscoDifficulty = selection.rosco.difficulty;
+      } else if (selection?.mode === 'preset') {
+        // Cada jugador recibe un rosco distinto extraído de la pila viva de esa dificultad.
+        roscoPool = drawRoscos(selection.difficulty, maxPlayers);
+        roscoTheme = selection.theme;
+        roscoDifficulty = selection.difficulty;
+      } else {
+        ack?.({ ok: false, reason: 'Elige un rosco antes de crear la partida.' });
         return;
       }
       const code = createRoomCode();
-      const roscoPool = buildRoscoPool(PRESET_ROSCOS, payload.rosco.theme, payload.rosco.difficulty, payload.rosco);
       const room: ServerRoom = {
         code,
         hostSocketId: socket.id,
         status: 'lobby',
         maxPlayers,
-        roscoTheme: payload.rosco.theme,
-        roscoDifficulty: payload.rosco.difficulty,
+        roscoTheme,
+        roscoDifficulty,
         roscoPool,
         timerSeconds,
         startedAt: null,
@@ -169,8 +180,8 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
     const avatar = typeof payload.avatar === 'string' && payload.avatar.length <= MAX_AVATAR_LENGTH
       ? payload.avatar
       : DEFAULT_AVATAR;
-    // Cada jugador recibe un rosco distinto (mismo tema y dificultad) del banco de la sala.
-    const assignedRosco = assignRoscos(room.roscoPool, room.players.size + 1)[room.players.size];
+    // room.roscoPool ya tiene exactamente maxPlayers roscos distintos preparados al crear la sala.
+    const assignedRosco = room.roscoPool[room.players.size];
     const player = createPlayer(nanoid(8), socket.id, name, payload.color, avatar, assignedRosco);
     room.players.set(player.id, player);
     socket.join(room.code);

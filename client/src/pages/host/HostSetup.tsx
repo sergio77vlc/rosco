@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DEFAULT_AVATAR, PLAYER_COLORS, type Rosco } from '@rosco/shared';
+import { DEFAULT_AVATAR, PLAYER_COLORS, type RoscoSelection } from '@rosco/shared';
 import { useGame } from '../../context/GameContext';
 import RoscoPicker from '../../components/RoscoPicker';
 import AvatarPicker from '../../components/AvatarPicker';
@@ -20,7 +20,7 @@ export default function HostSetup() {
   const [hostColor, setHostColor] = useState<string>(PLAYER_COLORS[0]);
   const [hostAvatar, setHostAvatar] = useState<string>(DEFAULT_AVATAR);
 
-  const [selectedRosco, setSelectedRosco] = useState<Rosco | null>(null);
+  const [selectedRosco, setSelectedRosco] = useState<RoscoSelection | null>(null);
 
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export default function HostSetup() {
     try {
       const res = await emitWithAck<{ ok: true; code: string }>('host:createRoom', {
         maxPlayers,
-        rosco: selectedRosco,
+        selection: selectedRosco,
         timerSeconds,
       });
       if (hostIsPlayer) {

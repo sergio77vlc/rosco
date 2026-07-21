@@ -1,60 +1,24 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import type { Difficulty, Rosco } from '@rosco/shared';
-import { CATEGORY_ORDER, DIFFICULTY_ICONS, DIFFICULTY_LABELS, categoryInfo } from '../constants';
+import React, { useState } from 'react';
+import type { Difficulty, RoscoSelection } from '@rosco/shared';
+import { DIFFICULTY_ICONS, DIFFICULTY_LABELS, categoryInfo } from '../constants';
+
+const ROSCO_THEME = 'cultura general';
 
 interface RoscoPickerProps {
-  value: Rosco | null;
-  onChange: (rosco: Rosco) => void;
+  value: RoscoSelection | null;
+  onChange: (selection: RoscoSelection) => void;
 }
 
 export default function RoscoPicker({ value, onChange }: RoscoPickerProps) {
   const [tab, setTab] = useState<'preset' | 'ai'>('preset');
-
-  const [presets, setPresets] = useState<Rosco[]>([]);
-  const [presetsError, setPresetsError] = useState<string | null>(null);
-  const [category, setCategory] = useState<string | null>(null);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | null>(null);
 
   const [aiTheme, setAiTheme] = useState('');
   const [aiDifficulty, setAiDifficulty] = useState<Difficulty>('medio');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch('/api/rosco/presets')
-      .then((res) => res.json())
-      .then((data) => setPresets(data.roscos ?? []))
-      .catch(() => setPresetsError('No se pudieron cargar los roscos predefinidos.'));
-  }, []);
-
-  const categories = useMemo(() => {
-    const themes = new Set(presets.map((r) => r.theme));
-    const ordered = CATEGORY_ORDER.filter((t) => themes.has(t));
-    const rest = [...themes].filter((t) => !CATEGORY_ORDER.includes(t)).sort();
-    return [...ordered, ...rest];
-  }, [presets]);
-
-  const roscosInCategory = useMemo(
-    () => presets.filter((r) => r.theme === category),
-    [presets, category],
-  );
-
-  const countByDifficulty = useMemo(() => {
-    const counts: Record<Difficulty, number> = { facil: 0, medio: 0, dificil: 0 };
-    roscosInCategory.forEach((r) => counts[r.difficulty]++);
-    return counts;
-  }, [roscosInCategory]);
-
-  function chooseCategory(theme: string) {
-    setCategory(theme);
-    setSelectedDifficulty(null);
-  }
-
-  function chooseDifficulty(difficulty: Difficulty) {
-    const pool = roscosInCategory.filter((r) => r.difficulty === difficulty);
-    if (pool.length === 0) return;
-    setSelectedDifficulty(difficulty);
-    onChange(pool[Math.floor(Math.random() * pool.length)]);
+  function choosePresetDifficulty(difficulty: Difficulty) {
+    onChange({ mode: 'preset', theme: ROSCO_THEME, difficulty });
   }
 
   async function handleGenerateAi() {
@@ -68,13 +32,15 @@ export default function RoscoPicker({ value, onChange }: RoscoPickerProps) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo generar el rosco.');
-      onChange(data.rosco);
+      onChange({ mode: 'ai', rosco: data.rosco });
     } catch (err) {
       setAiError(err instanceof Error ? err.message : 'Error generando el rosco.');
     } finally {
       setAiLoading(false);
     }
   }
+
+  const themeInfo = categoryInfo(ROSCO_THEME);
 
   return (
     <section className="setup-section">
@@ -90,47 +56,21 @@ export default function RoscoPicker({ value, onChange }: RoscoPickerProps) {
 
       {tab === 'preset' && (
         <div className="preset-picker">
-          {presetsError && <p className="error-text">{presetsError}</p>}
-
-          {!category && (
-            <div className="category-grid">
-              {categories.map((theme) => {
-                const info = categoryInfo(theme);
-                const count = presets.filter((r) => r.theme === theme).length;
-                return (
-                  <button key={theme} type="button" className="category-card" onClick={() => chooseCategory(theme)}>
-                    <span className="category-card-icon">{info.icon}</span>
-                    <span className="category-card-label">{info.label}</span>
-                    <span className="category-card-count">{count} roscos</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {category && (
-            <>
-              <button type="button" className="category-back" onClick={() => setCategory(null)}>
-                ← Todas las categorías
+          <h3 className="category-heading">
+            {themeInfo.icon} {themeInfo.label}
+          </h3>
+          <p className="preset-picker-hint">Elige la dificultad, el rosco se asigna automáticamente.</p>
+          <div className="pill-row">
+            {(['medio', 'dificil'] as const).map((d) => (
+              <button
+                key={d}
+                className={`pill ${value?.mode === 'preset' && value.difficulty === d ? 'pill-active' : ''}`}
+                onClick={() => choosePresetDifficulty(d)}
+              >
+                {DIFFICULTY_ICONS[d]} {DIFFICULTY_LABELS[d]}
               </button>
-              <h3 className="category-heading">
-                {categoryInfo(category).icon} {categoryInfo(category).label}
-              </h3>
-              <p className="preset-picker-hint">Elige la dificultad, el rosco se asigna automáticamente.</p>
-              <div className="pill-row">
-                {(['facil', 'medio', 'dificil'] as const).map((d) => (
-                  <button
-                    key={d}
-                    className={`pill ${selectedDifficulty === d ? 'pill-active' : ''}`}
-                    disabled={countByDifficulty[d] === 0}
-                    onClick={() => chooseDifficulty(d)}
-                  >
-                    {DIFFICULTY_ICONS[d]} {DIFFICULTY_LABELS[d]} ({countByDifficulty[d]})
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+            ))}
+          </div>
         </div>
       )}
 
@@ -149,7 +89,7 @@ export default function RoscoPicker({ value, onChange }: RoscoPickerProps) {
           <label>
             Dificultad
             <select value={aiDifficulty} onChange={(e) => setAiDifficulty(e.target.value as Difficulty)}>
-              {(['facil', 'medio', 'dificil'] as const).map((d) => (
+              {(['medio', 'dificil'] as const).map((d) => (
                 <option key={d} value={d}>
                   {DIFFICULTY_ICONS[d]} {DIFFICULTY_LABELS[d]}
                 </option>
@@ -160,19 +100,18 @@ export default function RoscoPicker({ value, onChange }: RoscoPickerProps) {
             {aiLoading ? '✨ Generando...' : '✨ Generar rosco'}
           </button>
           {aiError && <p className="error-text">{aiError}</p>}
-          {value?.source === 'ai' && <p className="success-text">Rosco generado: "{value.title}" ✅</p>}
+          {value?.mode === 'ai' && <p className="success-text">Rosco generado: "{value.rosco.title}" ✅</p>}
         </div>
       )}
 
-      {value && value.source === 'preset' && (
+      {value?.mode === 'preset' && (
         <p className="setup-selected">
-          🎯 {categoryInfo(value.theme).icon} {categoryInfo(value.theme).label} ·{' '}
-          {DIFFICULTY_ICONS[value.difficulty]} {DIFFICULTY_LABELS[value.difficulty]}
+          🎯 {themeInfo.icon} {themeInfo.label} · {DIFFICULTY_ICONS[value.difficulty]} {DIFFICULTY_LABELS[value.difficulty]}
         </p>
       )}
-      {value && value.source === 'ai' && (
+      {value?.mode === 'ai' && (
         <p className="setup-selected">
-          🎯 Rosco seleccionado: <strong>{value.title}</strong>
+          🎯 Rosco seleccionado: <strong>{value.rosco.title}</strong>
         </p>
       )}
     </section>
