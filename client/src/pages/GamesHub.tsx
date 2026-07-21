@@ -19,6 +19,14 @@ const GAMES: GameEntry[] = [
     path: '/pasapalabra',
     githubUrl: 'https://github.com/sergio77vlc/rosco',
   },
+  {
+    id: 'quiz',
+    name: 'Quiz',
+    icon: '🧠',
+    description: 'Preguntas de cultura general a contrarreloj, estilo Kahoot: quien más rápido acierta, más puntos gana.',
+    path: '/quiz',
+    githubUrl: 'https://github.com/sergio77vlc/rosco',
+  },
 ];
 
 export default function GamesHub() {

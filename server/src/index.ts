@@ -9,6 +9,7 @@ import type { Difficulty } from '@rosco/shared';
 import { drawRoscos } from './roscos/pool.js';
 import { generateRoscoWithAI, RoscoGenerationError } from './ai/generateRosco.js';
 import { registerSocketHandlers } from './socketHandlers.js';
+import { registerQuizSocketHandlers } from './quizSocketHandlers.js';
 
 const VALID_DIFFICULTIES: Difficulty[] = ['medio', 'dificil'];
 const MAX_DRAW_COUNT = 6;
@@ -74,6 +75,7 @@ const io = new Server(httpServer, {
 
 io.on('connection', (socket) => {
   registerSocketHandlers(io, socket);
+  registerQuizSocketHandlers(io, socket);
 });
 
 httpServer.listen(PORT, HOST, () => {

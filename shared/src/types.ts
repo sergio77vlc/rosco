@@ -126,3 +126,87 @@ export const PLAYER_AVATARS = [
 ] as const;
 
 export const DEFAULT_AVATAR = PLAYER_AVATARS[0];
+
+// ==========================================================================
+// Quiz (estilo Kahoot/Quizizz): preguntas de cultura general con 4 opciones,
+// todos los jugadores responden a la misma pregunta simultáneamente contra
+// un cronómetro, y la puntuación depende de acierto + rapidez.
+// ==========================================================================
+
+export type QuizDifficulty = Difficulty | 'mixto';
+
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  options: [string, string, string, string];
+  correctIndex: 0 | 1 | 2 | 3;
+  difficulty: Difficulty;
+}
+
+/** Pregunta tal y como se envía a los clientes mientras está activa: sin la respuesta correcta. */
+export type QuizQuestionView = Omit<QuizQuestion, 'correctIndex'>;
+
+export type QuizRoomStatus = 'lobby' | 'question' | 'reveal' | 'finished';
+
+export interface QuizPlayerPublic {
+  id: string;
+  name: string;
+  color: string;
+  avatar: string;
+  connected: boolean;
+  score: number;
+  streak: number;
+  hasAnswered: boolean;
+  lastPointsEarned: number | null;
+  lastCorrect: boolean | null;
+}
+
+export interface QuizRoomPublic {
+  code: string;
+  status: QuizRoomStatus;
+  maxPlayers: number;
+  difficulty: QuizDifficulty;
+  questionCount: number;
+  questionDurationSeconds: number;
+  currentQuestionIndex: number;
+  currentQuestion: QuizQuestionView | null;
+  questionEndsAt: number | null;
+  revealCorrectIndex: number | null;
+  revealEndsAt: number | null;
+  players: QuizPlayerPublic[];
+}
+
+export interface QuizRankingEntry {
+  playerId: string;
+  name: string;
+  color: string;
+  avatar: string;
+  score: number;
+  correctCount: number;
+  rank: number;
+}
+
+// ---- Socket.IO event payloads ----
+
+export interface QuizHostCreateRoomPayload {
+  maxPlayers: number;
+  difficulty: QuizDifficulty;
+  questionCount: number;
+  questionDurationSeconds: number;
+}
+
+export interface QuizPlayerJoinRoomPayload {
+  code: string;
+  name: string;
+  color: string;
+  avatar: string;
+}
+
+export interface QuizPlayerAnswerPayload {
+  code: string;
+  optionIndex: 0 | 1 | 2 | 3;
+}
+
+export interface QuizGameFinishedPayload {
+  ranking: QuizRankingEntry[];
+}

@@ -1,10 +1,10 @@
 # Rosco Multijugador
 
-Plataforma web con varios minijuegos. De momento incluye un juego multijugador tipo "Pasapalabra" (rosco): un dispositivo hospeda la partida y la muestra en tiempo real; cada jugador juega desde su propio móvil, uniéndose escaneando un código QR o introduciendo un código de sala.
+Plataforma web con varios minijuegos multijugador. Incluye un juego tipo "Pasapalabra" (rosco) y un quiz de cultura general estilo Kahoot/Quizizz: un dispositivo hospeda la partida y la muestra en tiempo real; cada jugador juega desde su propio móvil, uniéndose escaneando un código QR o introduciendo un código de sala.
 
 ## Funcionalidades
 
-- **Página de inicio (`/`)**: una sala de juegos con una tarjeta por cada juego disponible (de momento solo Pasapalabra), con un botón para **jugar** y otro que enlaza a su **repositorio de GitHub**. Preparada para añadir más juegos: cada uno se registra en `client/src/pages/GamesHub.tsx` con su propia tarjeta.
+- **Página de inicio (`/`)**: una sala de juegos con una tarjeta por cada juego disponible, con un botón para **jugar** y otro que enlaza a su **repositorio de GitHub**. Preparada para añadir más juegos: cada uno se registra en `client/src/pages/GamesHub.tsx` con su propia tarjeta.
 - Pantalla de inicio de Pasapalabra (`/pasapalabra`): **hospedar partida**, **unirse escaneando un QR**, o **jugar en el mismo dispositivo** (modo local, sin red).
 - Configuración del anfitrión: número de jugadores (2-6), duración del cronómetro y elección del rosco. Para jugar solo (1 jugador) se usa el modo "Jugar en este dispositivo", no hospedar.
 - La partida arranca automáticamente en cuanto se llena el aforo de jugadores, sin esperar a que el anfitrión pulse nada (también se puede empezar antes manualmente).
@@ -23,6 +23,15 @@ Plataforma web con varios minijuegos. De momento incluye un juego multijugador t
 - El anfitrión ve **el rosco individual de cada jugador en tiempo real**: el del jugador con el turno actual se muestra en grande, junto a una **presentadora animada de estilo anime** con distintas expresiones (sonríe con los aciertos, se entristece con los fallos) que mueve los labios al anunciar en voz alta cada cambio de turno; el resto de roscos se ven en pequeño debajo, todos a la vez, con cronómetro y ranking en vivo. La voz de la presentadora se puede silenciar con un botón (🔊/🔇).
 - **Modo local ("Jugar en este dispositivo")**: hasta 6 jugadores se turnan en el mismo móvil o pantalla, sin necesidad de red ni de otros dispositivos. Cada jugador tiene su propio rosco (mismo tema y dificultad que los demás, pero con pistas distintas), y solo uno responde a la vez: si acierta, sigue él; si falla o pasa palabra, el turno pasa automáticamente al siguiente. Un indicador de turno y un marcador con todos los jugadores están siempre visibles en pantalla.
 - Resultados finales con ranking (aciertos, fallos y tiempo).
+
+### Quiz (`/quiz`) — estilo Kahoot/Quizizz
+
+- Preguntas de cultura general con **4 opciones** (dos bancos de +100 preguntas cada uno, dificultad normal y difícil, más una opción "mixta" que combina ambas), extraídas sin repetir de una pila viva igual que en Pasapalabra.
+- Todos los jugadores responden **a la misma pregunta a la vez**, contra un cronómetro configurable (10-60s por pregunta) y visible en grande.
+- La puntuación premia acertar rápido: entre 500 y 1000 puntos por acierto según la rapidez, 0 si se falla o no se responde a tiempo. La pregunta se resuelve en cuanto responden todos los jugadores conectados, o al agotarse el tiempo.
+- Tras cada pregunta hay una breve fase de **revelado**: se ilumina la opción correcta, se marca en rojo la opción elegida si era incorrecta, y se muestra un marcador en vivo con los puntos ganados por cada jugador. La partida avanza sola a la siguiente pregunta tras unos segundos.
+- Configuración del anfitrión: nº máximo de jugadores, dificultad, nº de preguntas (5-20) y duración de cada una. Igual que en Pasapalabra, el interruptor **"Usar dispositivo en modo TV"** decide si el anfitrión juega también o solo hace de panel/marcador.
+- Al terminar, podio con los 3 primeros puestos y ranking completo por puntos y aciertos.
 
 ## Arquitectura
 
@@ -196,6 +205,21 @@ client/src/pages/host/*    Configuración, sala de espera (QR), dashboard en viv
 client/src/pages/join/*    Escaneo de QR / código manual, sala de espera y pantalla de juego
 client/src/pages/local/*   Modo "pasa y juega" en el mismo dispositivo (configuración, turnos, resultados)
 client/src/context/LocalGameContext.tsx  Estado del modo local (turnos, progreso por jugador), sin red
+
+server/src/quiz/bank.ts        Tipo QuizQuestion[] y validador buildQuizBank() (4 opciones, sin duplicados)
+server/src/quiz/pool.ts        drawQuizQuestions(): extrae preguntas de la pila viva sin repetir, con cola barajada por dificultad
+server/src/quiz/engine.ts      Resolución de cada pregunta (puntos, racha, ranking) y estado público de la sala
+server/src/quiz/data/*.ts      Bancos de preguntas de cultura general (normal y difícil), +100 preguntas cada uno
+server/src/quizSocketHandlers.ts Eventos de Socket.IO del quiz (host y jugadores), con los timers de pregunta/revelado
+shared/src/quizScoring.ts      computeQuizPoints(): puntos por acierto según la rapidez de respuesta
+
+client/src/pages/quiz/QuizHome.tsx           Página de inicio del quiz (hospedar / unirse)
+client/src/pages/quiz/QuizHostSetup.tsx      Configuración: jugadores, dificultad, nº de preguntas, tiempo por pregunta
+client/src/pages/quiz/QuizHostRoomPage.tsx   Enruta según el estado de la sala: lobby, pregunta en curso o resultados
+client/src/pages/quiz/QuizHostGame.tsx       Dashboard en vivo: pregunta, cronómetro, respondidos, marcador tras cada revelado
+client/src/pages/quiz/QuizPlayerGame.tsx     Pantalla del jugador: 4 opciones de colores al estilo Kahoot, puntos y racha
+client/src/context/QuizContext.tsx           Estado de red del quiz (sala, ranking final, jugador), vía Socket.IO
+client/src/components/QuizPodium.tsx         Podio con los 3 primeros puestos, reutilizado por el anfitrión y los jugadores
 client/src/components/RoscoWheel.tsx  Rueda del rosco (SVG), con el avatar del jugador en el centro
 client/src/components/RoscoPlayer.tsx Panel de juego compacto (sin scroll) reutilizado por el modo en red y el modo local
 client/src/components/Presenter.tsx   Presentadora animada (SVG): expresiones y boca sincronizada con el TTS del dashboard del anfitrión
