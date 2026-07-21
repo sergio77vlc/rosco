@@ -5,6 +5,8 @@ import PlayerBadge from '../../components/PlayerBadge';
 import AvatarPicker from '../../components/AvatarPicker';
 import { useGame } from '../../context/GameContext';
 import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
+import { useRoomReconnect } from '../../hooks/useRoomReconnect';
+import { saveSession } from '../../utils/session';
 
 export default function JoinLobby() {
   const { code } = useParams<{ code: string }>();
@@ -17,6 +19,15 @@ export default function JoinLobby() {
   const [avatar, setAvatar] = useState<string>(DEFAULT_AVATAR);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useRoomReconnect({
+    code,
+    prefix: 'rosco',
+    hostReconnectEvent: 'host:reconnect',
+    playerReconnectEvent: 'player:reconnect',
+    emitWithAck,
+    setPlayerId,
+  });
 
   useEffect(() => {
     if (room && room.status === 'playing' && playerId) {
@@ -38,6 +49,7 @@ export default function JoinLobby() {
         avatar,
       });
       setPlayerId(res.playerId);
+      saveSession('rosco', code, { playerId: res.playerId });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo unir a la partida.');
     } finally {
@@ -87,6 +99,9 @@ export default function JoinLobby() {
     <div className="screen screen-center">
       <h1 className="screen-title">Sala {code}</h1>
       <p className="app-subtitle">Esperando a que el anfitrión empiece la partida...</p>
+      {room && !room.hostConnected && (
+        <p className="host-disconnected-banner">⚠️ El anfitrión se ha desconectado. Esperando a que vuelva...</p>
+      )}
       {room && (
         <div className="lobby-players-list">
           {room.players.map((p) => (

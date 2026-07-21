@@ -4,8 +4,10 @@ import { DEFAULT_AVATAR, ROSCO_ALPHABET, answerMatchesLetterRule, nextActivePlay
 import type {
   Difficulty,
   HostCreateRoomPayload,
+  HostReconnectPayload,
   PlayerJoinRoomPayload,
   PlayerPassPayload,
+  PlayerReconnectPayload,
   PlayerSubmitAnswerPayload,
   Rosco,
 } from '@rosco/shared';
@@ -17,7 +19,7 @@ import {
   getRoom,
   saveRoom,
 } from './rooms.js';
-import { computeRanking, createPlayer, passLetter, submitAnswer, toPublicRoom } from './gameEngine.js';
+import { computeRanking, createPlayer, passLetter, reconnectPlayer, submitAnswer, toPublicRoom } from './gameEngine.js';
 import { drawRoscos } from './roscos/pool.js';
 import type { ServerPlayer, ServerRoom } from './roomTypes.js';
 
@@ -27,6 +29,9 @@ const MIN_TIMER_SECONDS = 30;
 const MAX_TIMER_SECONDS = 600;
 // Suficiente para una foto JPEG pequeña en base64 (~200x200) sin permitir payloads abusivos.
 const MAX_AVATAR_LENGTH = 300_000;
+// Tiempo que se mantiene viva la sala tras desconectarse el anfitrión, por si vuelve
+// (recarga de página, corte de red breve) antes de darla por cerrada.
+const HOST_RECONNECT_GRACE_MS = 45_000;
 
 function validateRosco(rosco: Rosco): string | null {
   if (!rosco || !Array.isArray(rosco.letters) || rosco.letters.length !== ROSCO_ALPHABET.length) {
@@ -53,6 +58,16 @@ function sortedPlayers(room: ServerRoom): ServerPlayer[] {
 
 function broadcastRoomState(io: Server, room: ServerRoom): void {
   io.to(room.code).emit('room:state', toPublicRoom(room));
+}
+
+function scheduleHostDisconnect(io: Server, room: ServerRoom): void {
+  room.hostConnected = false;
+  broadcastRoomState(io, room);
+  if (room.hostDisconnectTimeout) clearTimeout(room.hostDisconnectTimeout);
+  room.hostDisconnectTimeout = setTimeout(() => {
+    io.to(room.code).emit('room:error', { reason: 'El anfitrión no volvió a tiempo. La partida ha finalizado.' });
+    deleteRoom(room.code);
+  }, HOST_RECONNECT_GRACE_MS);
 }
 
 function finishRoom(io: Server, room: ServerRoom): void {
@@ -120,9 +135,12 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
         return;
       }
       const code = createRoomCode();
+      const hostToken = nanoid();
       const room: ServerRoom = {
         code,
         hostSocketId: socket.id,
+        hostToken,
+        hostConnected: true,
         status: 'lobby',
         maxPlayers,
         roscoTheme,
@@ -134,10 +152,11 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
         activePlayerId: null,
         players: new Map(),
         finishTimeout: null,
+        hostDisconnectTimeout: null,
       };
       saveRoom(room);
       socket.join(code);
-      ack?.({ ok: true, code });
+      ack?.({ ok: true, code, hostToken });
       broadcastRoomState(io, room);
     } catch {
       ack?.({ ok: false, reason: 'No se pudo crear la partida.' });
@@ -160,6 +179,36 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
     }
     startGame(io, room);
     ack?.({ ok: true });
+  });
+
+  socket.on('host:reconnect', (payload: HostReconnectPayload, ack?: (res: any) => void) => {
+    const room = getRoom(payload.code);
+    if (!room || room.hostToken !== payload.hostToken) {
+      ack?.({ ok: false, reason: 'Sesión de anfitrión no válida o partida finalizada.' });
+      return;
+    }
+    if (room.hostDisconnectTimeout) {
+      clearTimeout(room.hostDisconnectTimeout);
+      room.hostDisconnectTimeout = null;
+    }
+    room.hostSocketId = socket.id;
+    room.hostConnected = true;
+    socket.join(room.code);
+    ack?.({ ok: true });
+    broadcastRoomState(io, room);
+  });
+
+  socket.on('player:reconnect', (payload: PlayerReconnectPayload, ack?: (res: any) => void) => {
+    const room = getRoom(payload.code);
+    const player = room?.players.get(payload.playerId);
+    if (!room || !player) {
+      ack?.({ ok: false, reason: 'No se encontró tu sesión en esta partida.' });
+      return;
+    }
+    reconnectPlayer(player, socket.id);
+    socket.join(room.code);
+    ack?.({ ok: true, playerId: player.id });
+    broadcastRoomState(io, room);
   });
 
   socket.on('player:joinRoom', (payload: PlayerJoinRoomPayload, ack?: (res: any) => void) => {
@@ -221,24 +270,24 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
     if (playerRoom) {
       const player = Array.from(playerRoom.players.values()).find((p) => p.socketId === socket.id);
       if (player) player.connected = false;
-      if (playerRoom.hostSocketId === socket.id) {
-        // Partida en solitario: el mismo dispositivo es anfitrión y jugador. Al salir, se cierra la sala.
-        io.to(playerRoom.code).emit('room:error', { reason: 'El anfitrión ha cerrado la partida.' });
-        deleteRoom(playerRoom.code);
-        return;
+      // Si al jugador que se ha ido le tocaba jugar, se pasa el turno para no bloquear la partida
+      // (también cuando el anfitrión juega también como jugador y se desconecta).
+      const wasActiveTurn = !!player && playerRoom.status === 'playing' && playerRoom.activePlayerId === player.id;
+      if (wasActiveTurn) {
+        advanceTurn(io, playerRoom, player!, false);
       }
-      // Si al jugador que se ha ido le tocaba jugar, se pasa el turno para no bloquear la partida.
-      if (player && playerRoom.status === 'playing' && playerRoom.activePlayerId === player.id) {
-        advanceTurn(io, playerRoom, player, false);
-      } else {
+      if (playerRoom.hostSocketId === socket.id) {
+        // El anfitrión (aunque juegue también como jugador) tiene un margen para reconectar
+        // -recarga de página, corte de red breve- antes de dar la partida por finalizada.
+        scheduleHostDisconnect(io, playerRoom);
+      } else if (!wasActiveTurn) {
         broadcastRoomState(io, playerRoom);
       }
       return;
     }
     const hostRoom = findRoomByHostSocket(socket.id);
     if (hostRoom) {
-      io.to(hostRoom.code).emit('room:error', { reason: 'El anfitrión ha cerrado la partida.' });
-      deleteRoom(hostRoom.code);
+      scheduleHostDisconnect(io, hostRoom);
     }
   });
 }

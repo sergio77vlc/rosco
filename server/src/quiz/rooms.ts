@@ -26,6 +26,7 @@ export function deleteQuizRoom(code: string): void {
   const room = rooms.get(code);
   if (room?.questionTimeout) clearTimeout(room.questionTimeout);
   if (room?.revealTimeout) clearTimeout(room.revealTimeout);
+  if (room?.hostDisconnectTimeout) clearTimeout(room.hostDisconnectTimeout);
   rooms.delete(code);
 }
 

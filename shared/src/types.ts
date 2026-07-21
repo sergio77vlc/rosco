@@ -53,6 +53,7 @@ export interface RoomPublic {
   startedAt: number | null;
   endsAt: number | null;
   activePlayerId: string | null;
+  hostConnected: boolean;
   players: PlayerPublic[];
 }
 
@@ -107,6 +108,18 @@ export interface PlayerPassPayload {
 
 export interface RoomErrorPayload {
   reason: string;
+}
+
+/** Credenciales guardadas por el cliente (localStorage) para reengancharse tras un
+ * refresco de página o un corte de red breve, sin perder la sesión. */
+export interface HostReconnectPayload {
+  code: string;
+  hostToken: string;
+}
+
+export interface PlayerReconnectPayload {
+  code: string;
+  playerId: string;
 }
 
 export interface GameFinishedPayload {
@@ -173,6 +186,7 @@ export interface QuizRoomPublic {
   questionEndsAt: number | null;
   revealCorrectIndex: number | null;
   revealEndsAt: number | null;
+  hostConnected: boolean;
   players: QuizPlayerPublic[];
 }
 

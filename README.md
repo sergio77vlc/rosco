@@ -6,6 +6,7 @@ Plataforma web de **juegos educativos multijugador**, pensada para jugar con ami
 
 - **Página de inicio (`/`)**: una sala de juegos con una tarjeta por cada juego disponible, con un botón para **jugar** y otro que enlaza a su **repositorio de GitHub**. Preparada para añadir más juegos: cada uno se registra en `client/src/pages/GamesHub.tsx` con su propia tarjeta.
 - Pantalla de inicio de Pasapalabra (`/pasapalabra`): **hospedar partida**, **unirse escaneando un QR**, o **jugar en el mismo dispositivo** (modo local, sin red).
+- **Reconexión automática** (Pasapalabra y Quiz): si a un jugador se le corta la red o recarga la página sin querer, su navegador recupera solo su sesión (guardada en el propio dispositivo) y vuelve exactamente a la partida en la que estaba, sin tener que volver a introducir su nombre. El anfitrión tiene además un margen de 45 segundos para reconectar tras desconectarse (recarga de página, corte de red) antes de que la partida se dé por finalizada; si el anfitrión juega también como jugador, recupera ambos roles a la vez.
 - Configuración del anfitrión: número de jugadores (2-6), duración del cronómetro y elección del rosco. Para jugar solo (1 jugador) se usa el modo "Jugar en este dispositivo", no hospedar.
 - La partida arranca automáticamente en cuanto se llena el aforo de jugadores, sin esperar a que el anfitrión pulse nada (también se puede empezar antes manualmente).
 - Interruptor **"Usar dispositivo en modo TV"** en la configuración de hospedar: por defecto está desactivado y el anfitrión juega también como uno más (configura su nombre y avatar, y su pantalla pasa a mostrar su propio rosco en cuanto empieza la partida). Si se activa, el dispositivo que hospeda pasa a ser solo un panel espectador que muestra todos los roscos en directo, como un marcador de TV, sin jugar.
@@ -230,6 +231,8 @@ client/src/components/AvatarPicker.tsx Selector de avatar: lista de emojis o fot
 client/src/components/AvatarView.tsx  Renderiza un avatar (emoji o foto) de forma consistente en toda la app
 client/src/hooks/useSpeechSynthesis.ts   Lectura de la pista en voz alta (TTS), velocidad ajustable
 client/src/hooks/useSpeechRecognition.ts Dictado de la respuesta por micrófono (STT)
+client/src/hooks/useRoomReconnect.ts   Reengancha la sesión guardada (anfitrión y/o jugador) al montar la página y en cada reconexión del socket
+client/src/utils/session.ts            Guarda/lee en localStorage la credencial de reconexión (hostToken y/o playerId) por sala
 shared/src/roscoProgress.ts    Motor de turnos: avanzar letra (resolver acierto/fallo/pasapalabra) y turno entre jugadores (nextActivePlayerId), usado por el servidor y por el modo local del cliente
 shared/src/roscoAssignment.ts  assignRoscos(): reparte los roscos de un pool entre los jugadores de una partida
 ```
@@ -237,7 +240,6 @@ shared/src/roscoAssignment.ts  assignRoscos(): reparte los roscos de un pool ent
 ## Notas y limitaciones conocidas
 
 - El estado de las partidas, y también el registro de qué preguntas se han usado recientemente en cada letra/dificultad para evitar repetirlas, viven en memoria del servidor: si el proceso se reinicia, las partidas en curso se pierden y las pilas de preguntas "olvidan" el progreso por el que iban (vuelven a barajarse desde el principio).
-- El anfitrión debe mantener la pestaña abierta durante toda la partida (no hay reconexión automática de la sesión del anfitrión tras recargar la página).
-- Si un jugador se desconecta, su progreso se conserva pero deberá volver a entrar por su cuenta; no hay reconexión automática con la misma sesión. Si le tocaba el turno en ese momento, se pasa automáticamente al siguiente jugador para no bloquear la partida.
+- Tanto el anfitrión como los jugadores se reconectan automáticamente (recarga de página, corte de red breve) gracias a una credencial guardada en `localStorage` del navegador: si el anfitrión no vuelve en 45 segundos, la partida se da por finalizada y se avisa a los jugadores. Si a un jugador le tocaba el turno justo cuando se desconectó, ese turno pasa igualmente al siguiente jugador para no bloquear la partida (aunque el que se desconectó puede reconectar y seguir jugando cuando le vuelva a tocar). La reconexión depende de que el navegador conserve ese `localStorage` (no funciona si se borran los datos del sitio o se usa un dispositivo distinto).
 - La lectura en voz alta y el dictado por micrófono usan las APIs nativas del navegador (Web Speech API), sin coste ni configuración adicional. El reconocimiento de voz solo está disponible en navegadores compatibles (Chrome/Android funcionan bien; Safari/iOS no lo soporta) y, como el acceso al micrófono, requiere que la web se sirva por HTTPS.
 - La lectura en voz alta depende de que el sistema operativo/navegador tenga voces de síntesis instaladas. En Linux de escritorio (Chrome/Brave/Chromium) suele no haber ninguna por defecto, y Brave además puede bloquear la lista de voces con su protección "Shields" contra fingerprinting — en ambos casos la app avisa en pantalla si no consigue reproducir audio. En Android e iOS las voces vienen instaladas de serie y funciona sin configuración adicional.

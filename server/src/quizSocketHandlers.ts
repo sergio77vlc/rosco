@@ -2,6 +2,8 @@ import { nanoid } from 'nanoid';
 import type { Server, Socket } from 'socket.io';
 import { DEFAULT_AVATAR } from '@rosco/shared';
 import type {
+  HostReconnectPayload,
+  PlayerReconnectPayload,
   QuizDifficulty,
   QuizHostCreateRoomPayload,
   QuizPlayerAnswerPayload,
@@ -28,6 +30,9 @@ const MAX_DURATION_SECONDS = 60;
 const REVEAL_SECONDS = 5;
 const VALID_DIFFICULTIES: QuizDifficulty[] = ['medio', 'dificil', 'mixto'];
 const MAX_AVATAR_LENGTH = 300_000;
+// Tiempo que se mantiene viva la sala tras desconectarse el anfitrión, por si vuelve
+// (recarga de página, corte de red breve) antes de darla por cerrada.
+const HOST_RECONNECT_GRACE_MS = 45_000;
 
 function broadcastQuizRoomState(io: Server, room: ServerQuizRoom): void {
   io.to(room.code).emit('quiz:roomState', toPublicQuizRoom(room));
@@ -35,6 +40,16 @@ function broadcastQuizRoomState(io: Server, room: ServerQuizRoom): void {
 
 function connectedPlayers(room: ServerQuizRoom): ServerQuizPlayer[] {
   return Array.from(room.players.values()).filter((p) => p.connected);
+}
+
+function scheduleQuizHostDisconnect(io: Server, room: ServerQuizRoom): void {
+  room.hostConnected = false;
+  broadcastQuizRoomState(io, room);
+  if (room.hostDisconnectTimeout) clearTimeout(room.hostDisconnectTimeout);
+  room.hostDisconnectTimeout = setTimeout(() => {
+    io.to(room.code).emit('quiz:roomError', { reason: 'El anfitrión no volvió a tiempo. La partida ha finalizado.' });
+    deleteQuizRoom(room.code);
+  }, HOST_RECONNECT_GRACE_MS);
 }
 
 function finishQuizRoom(io: Server, room: ServerQuizRoom): void {
@@ -108,9 +123,12 @@ export function registerQuizSocketHandlers(io: Server, socket: Socket): void {
         return;
       }
       const code = createQuizRoomCode();
+      const hostToken = nanoid();
       const room: ServerQuizRoom = {
         code,
         hostSocketId: socket.id,
+        hostToken,
+        hostConnected: true,
         status: 'lobby',
         maxPlayers,
         difficulty: payload.difficulty,
@@ -124,10 +142,11 @@ export function registerQuizSocketHandlers(io: Server, socket: Socket): void {
         players: new Map(),
         questionTimeout: null,
         revealTimeout: null,
+        hostDisconnectTimeout: null,
       };
       saveQuizRoom(room);
       socket.join(code);
-      ack?.({ ok: true, code });
+      ack?.({ ok: true, code, hostToken });
       broadcastQuizRoomState(io, room);
     } catch {
       ack?.({ ok: false, reason: 'No se pudo crear la partida.' });
@@ -150,6 +169,37 @@ export function registerQuizSocketHandlers(io: Server, socket: Socket): void {
     }
     startQuizGame(io, room);
     ack?.({ ok: true });
+  });
+
+  socket.on('quiz:hostReconnect', (payload: HostReconnectPayload, ack?: (res: any) => void) => {
+    const room = getQuizRoom(payload.code);
+    if (!room || room.hostToken !== payload.hostToken) {
+      ack?.({ ok: false, reason: 'Sesión de anfitrión no válida o partida finalizada.' });
+      return;
+    }
+    if (room.hostDisconnectTimeout) {
+      clearTimeout(room.hostDisconnectTimeout);
+      room.hostDisconnectTimeout = null;
+    }
+    room.hostSocketId = socket.id;
+    room.hostConnected = true;
+    socket.join(room.code);
+    ack?.({ ok: true });
+    broadcastQuizRoomState(io, room);
+  });
+
+  socket.on('quiz:playerReconnect', (payload: PlayerReconnectPayload, ack?: (res: any) => void) => {
+    const room = getQuizRoom(payload.code);
+    const player = room?.players.get(payload.playerId);
+    if (!room || !player) {
+      ack?.({ ok: false, reason: 'No se encontró tu sesión en esta partida.' });
+      return;
+    }
+    player.socketId = socket.id;
+    player.connected = true;
+    socket.join(room.code);
+    ack?.({ ok: true, playerId: player.id });
+    broadcastQuizRoomState(io, room);
   });
 
   socket.on('quiz:playerJoinRoom', (payload: QuizPlayerJoinRoomPayload, ack?: (res: any) => void) => {
@@ -211,11 +261,12 @@ export function registerQuizSocketHandlers(io: Server, socket: Socket): void {
       const player = Array.from(playerRoom.players.values()).find((p) => p.socketId === socket.id);
       if (player) player.connected = false;
       if (playerRoom.hostSocketId === socket.id) {
-        io.to(playerRoom.code).emit('quiz:roomError', { reason: 'El anfitrión ha cerrado la partida.' });
-        deleteQuizRoom(playerRoom.code);
-        return;
+        // El anfitrión (aunque juegue también como jugador) tiene un margen para reconectar
+        // -recarga de página, corte de red breve- antes de dar la partida por finalizada.
+        scheduleQuizHostDisconnect(io, playerRoom);
+      } else {
+        broadcastQuizRoomState(io, playerRoom);
       }
-      broadcastQuizRoomState(io, playerRoom);
       if (playerRoom.status === 'question') {
         const connected = connectedPlayers(playerRoom);
         if (connected.length > 0 && connected.every((p) => p.currentAnswer !== null)) {
@@ -226,8 +277,7 @@ export function registerQuizSocketHandlers(io: Server, socket: Socket): void {
     }
     const hostRoom = findQuizRoomByHostSocket(socket.id);
     if (hostRoom) {
-      io.to(hostRoom.code).emit('quiz:roomError', { reason: 'El anfitrión ha cerrado la partida.' });
-      deleteQuizRoom(hostRoom.code);
+      scheduleQuizHostDisconnect(io, hostRoom);
     }
   });
 }

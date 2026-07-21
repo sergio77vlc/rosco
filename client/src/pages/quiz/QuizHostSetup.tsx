@@ -4,6 +4,7 @@ import { DEFAULT_AVATAR, PLAYER_COLORS, type QuizDifficulty } from '@rosco/share
 import { useQuiz } from '../../context/QuizContext';
 import AvatarPicker from '../../components/AvatarPicker';
 import { QUIZ_DIFFICULTY_ICONS, QUIZ_DIFFICULTY_LABELS, QUIZ_DURATION_OPTIONS } from '../../constants';
+import { saveSession } from '../../utils/session';
 
 const MIN_PLAYERS = 1;
 const MAX_PLAYERS = 12;
@@ -31,12 +32,13 @@ export default function QuizHostSetup() {
     setCreating(true);
     setCreateError(null);
     try {
-      const res = await emitWithAck<{ ok: true; code: string }>('quiz:hostCreateRoom', {
+      const res = await emitWithAck<{ ok: true; code: string; hostToken: string }>('quiz:hostCreateRoom', {
         maxPlayers,
         difficulty,
         questionCount,
         questionDurationSeconds,
       });
+      saveSession('quiz', res.code, { hostToken: res.hostToken });
       if (!tvMode) {
         const joinRes = await emitWithAck<{ ok: true; playerId: string }>('quiz:playerJoinRoom', {
           code: res.code,
@@ -45,6 +47,7 @@ export default function QuizHostSetup() {
           avatar: hostAvatar,
         });
         setPlayerId(joinRes.playerId);
+        saveSession('quiz', res.code, { playerId: joinRes.playerId });
       }
       navigate(`/quiz/host/${res.code}`);
     } catch (err) {

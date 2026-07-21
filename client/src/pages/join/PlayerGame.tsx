@@ -5,6 +5,8 @@ import AvatarView from '../../components/AvatarView';
 import { useGame } from '../../context/GameContext';
 import { getSocket } from '../../socket';
 import { rankPlayers } from '../../utils/rank';
+import { useRoomReconnect } from '../../hooks/useRoomReconnect';
+import { loadSession } from '../../utils/session';
 
 interface OutcomeEvent {
   seq: number;
@@ -17,14 +19,28 @@ interface OutcomeEvent {
 export default function PlayerGame() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
-  const { room, playerId } = useGame();
+  const { room, playerId, emitWithAck, setPlayerId } = useGame();
   const [outcomeEvent, setOutcomeEvent] = useState<OutcomeEvent | null>(null);
   const seqRef = useRef(0);
 
   const player = room?.players.find((p) => p.id === playerId);
 
+  useRoomReconnect({
+    code,
+    prefix: 'rosco',
+    hostReconnectEvent: 'host:reconnect',
+    playerReconnectEvent: 'player:reconnect',
+    emitWithAck,
+    setPlayerId,
+    onPlayerReconnectFailed: () => navigate(`/join/${code}`),
+  });
+
   useEffect(() => {
-    if (!playerId) {
+    if (playerId || !code) return;
+    // Si hay una sesión guardada, useRoomReconnect intentará recuperarla; solo si no hay
+    // nada que recuperar mandamos directamente a la pantalla de unirse.
+    const session = loadSession('rosco', code);
+    if (!session?.playerId) {
       navigate(`/join/${code}`);
     }
   }, [playerId, code, navigate]);

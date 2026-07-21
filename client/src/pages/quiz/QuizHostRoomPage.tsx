@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuiz } from '../../context/QuizContext';
+import { useRoomReconnect } from '../../hooks/useRoomReconnect';
 import QuizHostLobby from './QuizHostLobby';
 import QuizHostGame from './QuizHostGame';
 import QuizHostResults from './QuizHostResults';
@@ -8,7 +9,16 @@ import QuizHostResults from './QuizHostResults';
 export default function QuizHostRoomPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
-  const { room, playerId } = useQuiz();
+  const { room, playerId, emitWithAck, setPlayerId } = useQuiz();
+
+  useRoomReconnect({
+    code,
+    prefix: 'quiz',
+    hostReconnectEvent: 'quiz:hostReconnect',
+    playerReconnectEvent: 'quiz:playerReconnect',
+    emitWithAck,
+    setPlayerId,
+  });
 
   // Si el anfitrión también se unió como jugador, en cuanto empiece la partida
   // pasa a responder en su propia pantalla en vez de quedarse en el panel de TV.

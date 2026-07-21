@@ -4,6 +4,8 @@ import { DEFAULT_AVATAR, PLAYER_COLORS } from '@rosco/shared';
 import PlayerBadge from '../../components/PlayerBadge';
 import AvatarPicker from '../../components/AvatarPicker';
 import { useQuiz } from '../../context/QuizContext';
+import { useRoomReconnect } from '../../hooks/useRoomReconnect';
+import { saveSession } from '../../utils/session';
 
 export default function QuizJoinLobby() {
   const { code } = useParams<{ code: string }>();
@@ -15,6 +17,15 @@ export default function QuizJoinLobby() {
   const [avatar, setAvatar] = useState<string>(DEFAULT_AVATAR);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useRoomReconnect({
+    code,
+    prefix: 'quiz',
+    hostReconnectEvent: 'quiz:hostReconnect',
+    playerReconnectEvent: 'quiz:playerReconnect',
+    emitWithAck,
+    setPlayerId,
+  });
 
   useEffect(() => {
     if (room && room.status !== 'lobby' && playerId) {
@@ -35,6 +46,7 @@ export default function QuizJoinLobby() {
         avatar,
       });
       setPlayerId(res.playerId);
+      saveSession('quiz', code, { playerId: res.playerId });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo unir a la partida.');
     } finally {
@@ -84,6 +96,9 @@ export default function QuizJoinLobby() {
     <div className="screen screen-center">
       <h1 className="screen-title">Quiz {code}</h1>
       <p className="app-subtitle">Esperando a que el anfitrión empiece la partida...</p>
+      {room && !room.hostConnected && (
+        <p className="host-disconnected-banner">⚠️ El anfitrión se ha desconectado. Esperando a que vuelva...</p>
+      )}
       {room && (
         <div className="lobby-players-list">
           {room.players.map((p) => (

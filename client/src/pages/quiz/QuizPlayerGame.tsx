@@ -6,18 +6,32 @@ import QuizPodium from '../../components/QuizPodium';
 import QuizLiveRanking from '../../components/QuizLiveRanking';
 import { fallbackQuizRanking } from '../../utils/quizRank';
 import { QUIZ_OPTION_STYLES } from '../../constants';
+import { useRoomReconnect } from '../../hooks/useRoomReconnect';
+import { loadSession } from '../../utils/session';
 
 export default function QuizPlayerGame() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
-  const { room, playerId, ranking, emitWithAck } = useQuiz();
+  const { room, playerId, ranking, emitWithAck, setPlayerId } = useQuiz();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
 
   const player = room?.players.find((p) => p.id === playerId);
 
+  useRoomReconnect({
+    code,
+    prefix: 'quiz',
+    hostReconnectEvent: 'quiz:hostReconnect',
+    playerReconnectEvent: 'quiz:playerReconnect',
+    emitWithAck,
+    setPlayerId,
+    onPlayerReconnectFailed: () => navigate(`/quiz/join/${code}`),
+  });
+
   useEffect(() => {
-    if (!playerId) {
+    if (playerId || !code) return;
+    const session = loadSession('quiz', code);
+    if (!session?.playerId) {
       navigate(`/quiz/join/${code}`);
     }
   }, [playerId, code, navigate]);

@@ -473,6 +473,17 @@ button {
   font-weight: 600;
 }
 
+.host-disconnected-banner {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0;
+}
+
 .success-text {
   color: var(--green);
   font-weight: 600;

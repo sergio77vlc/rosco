@@ -25,6 +25,7 @@ export function getRoom(code: string): ServerRoom | undefined {
 export function deleteRoom(code: string): void {
   const room = rooms.get(code);
   if (room?.finishTimeout) clearTimeout(room.finishTimeout);
+  if (room?.hostDisconnectTimeout) clearTimeout(room.hostDisconnectTimeout);
   rooms.delete(code);
 }
 

@@ -99,6 +99,7 @@ export function toPublicRoom(room: ServerRoom): RoomPublic {
     startedAt: room.startedAt,
     endsAt: room.endsAt,
     activePlayerId: room.activePlayerId,
+    hostConnected: room.hostConnected,
     players: Array.from(room.players.values())
       .sort((a, b) => a.joinedAt - b.joinedAt)
       .map(toPublicPlayer),

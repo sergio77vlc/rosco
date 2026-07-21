@@ -24,6 +24,8 @@ export interface ServerQuizPlayer {
 export interface ServerQuizRoom {
   code: string;
   hostSocketId: string;
+  hostToken: string;
+  hostConnected: boolean;
   status: QuizRoomStatus;
   maxPlayers: number;
   difficulty: QuizDifficulty;
@@ -37,4 +39,5 @@ export interface ServerQuizRoom {
   players: Map<string, ServerQuizPlayer>;
   questionTimeout: NodeJS.Timeout | null;
   revealTimeout: NodeJS.Timeout | null;
+  hostDisconnectTimeout: NodeJS.Timeout | null;
 }

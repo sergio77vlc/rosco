@@ -5,6 +5,7 @@ import { useGame } from '../../context/GameContext';
 import RoscoPicker from '../../components/RoscoPicker';
 import AvatarPicker from '../../components/AvatarPicker';
 import { TIMER_OPTIONS } from '../../constants';
+import { saveSession } from '../../utils/session';
 
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 6;
@@ -33,11 +34,12 @@ export default function HostSetup() {
     setCreating(true);
     setCreateError(null);
     try {
-      const res = await emitWithAck<{ ok: true; code: string }>('host:createRoom', {
+      const res = await emitWithAck<{ ok: true; code: string; hostToken: string }>('host:createRoom', {
         maxPlayers,
         selection: selectedRosco,
         timerSeconds,
       });
+      saveSession('rosco', res.code, { hostToken: res.hostToken });
       if (!tvMode) {
         const joinRes = await emitWithAck<{ ok: true; playerId: string }>('player:joinRoom', {
           code: res.code,
@@ -46,6 +48,7 @@ export default function HostSetup() {
           avatar: hostAvatar,
         });
         setPlayerId(joinRes.playerId);
+        saveSession('rosco', res.code, { playerId: joinRes.playerId });
       }
       navigate(`/host/${res.code}`);
     } catch (err) {

@@ -17,6 +17,8 @@ export interface ServerPlayer {
 export interface ServerRoom {
   code: string;
   hostSocketId: string;
+  hostToken: string;
+  hostConnected: boolean;
   status: RoomStatus;
   maxPlayers: number;
   roscoTheme: string;
@@ -28,4 +30,5 @@ export interface ServerRoom {
   activePlayerId: string | null;
   players: Map<string, ServerPlayer>;
   finishTimeout: NodeJS.Timeout | null;
+  hostDisconnectTimeout: NodeJS.Timeout | null;
 }

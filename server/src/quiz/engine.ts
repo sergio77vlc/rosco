@@ -94,6 +94,7 @@ export function toPublicQuizRoom(room: ServerQuizRoom): QuizRoomPublic {
     questionEndsAt: room.questionEndsAt,
     revealCorrectIndex: showCorrectIndex && question ? question.correctIndex : null,
     revealEndsAt: room.revealEndsAt,
+    hostConnected: room.hostConnected,
     players: Array.from(room.players.values())
       .sort((a, b) => a.joinedAt - b.joinedAt)
       .map(toPublicPlayer),

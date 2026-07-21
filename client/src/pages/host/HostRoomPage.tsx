@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useGame } from '../../context/GameContext';
+import { useRoomReconnect } from '../../hooks/useRoomReconnect';
 import HostLobby from './HostLobby';
 import HostGame from './HostGame';
 import HostResults from './HostResults';
@@ -8,7 +9,16 @@ import HostResults from './HostResults';
 export default function HostRoomPage() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
-  const { room, playerId } = useGame();
+  const { room, playerId, emitWithAck, setPlayerId } = useGame();
+
+  useRoomReconnect({
+    code,
+    prefix: 'rosco',
+    hostReconnectEvent: 'host:reconnect',
+    playerReconnectEvent: 'player:reconnect',
+    emitWithAck,
+    setPlayerId,
+  });
 
   // Si el anfitrión también se unió como jugador, en cuanto empiece la partida
   // pasa a jugar su propio rosco en vez de quedarse en el panel de espectador.
