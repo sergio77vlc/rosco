@@ -8,7 +8,7 @@ export default function PasapalabraHome() {
       <button className="back-to-hub-link" onClick={() => navigate('/')}>
         ← Todos los juegos
       </button>
-      <h1 className="app-title">🎯 Rosco Multijugador</h1>
+      <h1 className="app-title">🎯 Pasapalabra</h1>
       <p className="app-subtitle">El clásico juego de Pasapalabra, con tus amigos y sus móviles.</p>
       <div className="home-actions">
         <button className="btn btn-primary btn-big" onClick={() => navigate('/host')}>

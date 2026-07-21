@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuiz } from '../../context/QuizContext';
 import Timer from '../../components/Timer';
 import QuizPodium from '../../components/QuizPodium';
+import QuizLiveRanking from '../../components/QuizLiveRanking';
 import { fallbackQuizRanking } from '../../utils/quizRank';
 import { QUIZ_OPTION_STYLES } from '../../constants';
 
@@ -83,6 +84,8 @@ export default function QuizPlayerGame() {
         <span className="quiz-player-score">⭐ {player.score} pts</span>
         <Timer endsAt={isReveal ? room.revealEndsAt : room.questionEndsAt} compact />
       </div>
+
+      <QuizLiveRanking players={room.players} highlightPlayerId={playerId} compact />
 
       <h1 className="quiz-question-text quiz-question-text-player">{question.question}</h1>
 

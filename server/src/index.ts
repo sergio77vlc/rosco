@@ -80,6 +80,6 @@ io.on('connection', (socket) => {
 
 httpServer.listen(PORT, HOST, () => {
   console.log(
-    `Servidor Rosco escuchando en ${HOST}:${PORT}${hasClientBuild ? ' (sirviendo cliente compilado)' : ''}`,
+    `Servidor SocialQuizz escuchando en ${HOST}:${PORT}${hasClientBuild ? ' (sirviendo cliente compilado)' : ''}`,
   );
 });

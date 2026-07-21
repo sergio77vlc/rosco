@@ -1,6 +1,6 @@
-# Rosco Multijugador
+# SocialQuizz
 
-Plataforma web con varios minijuegos multijugador. Incluye un juego tipo "Pasapalabra" (rosco) y un quiz de cultura general estilo Kahoot/Quizizz: un dispositivo hospeda la partida y la muestra en tiempo real; cada jugador juega desde su propio móvil, uniéndose escaneando un código QR o introduciendo un código de sala.
+Plataforma web de **juegos educativos multijugador**, pensada para jugar con amigos, familia o en clase. Incluye un juego tipo "Pasapalabra" (rosco) y un quiz de cultura general estilo Kahoot/Quizizz, con más juegos previstos a futuro. Un dispositivo hospeda la partida y la muestra en tiempo real; cada jugador juega desde su propio móvil, uniéndose escaneando un código QR o introduciendo un código de sala.
 
 ## Funcionalidades
 
@@ -29,7 +29,8 @@ Plataforma web con varios minijuegos multijugador. Incluye un juego tipo "Pasapa
 - Preguntas de cultura general con **4 opciones** (dos bancos de +100 preguntas cada uno, dificultad normal y difícil, más una opción "mixta" que combina ambas), extraídas sin repetir de una pila viva igual que en Pasapalabra.
 - Todos los jugadores responden **a la misma pregunta a la vez**, contra un cronómetro configurable (10-60s por pregunta) y visible en grande.
 - La puntuación premia acertar rápido: entre 500 y 1000 puntos por acierto según la rapidez, 0 si se falla o no se responde a tiempo. La pregunta se resuelve en cuanto responden todos los jugadores conectados, o al agotarse el tiempo.
-- Tras cada pregunta hay una breve fase de **revelado**: se ilumina la opción correcta, se marca en rojo la opción elegida si era incorrecta, y se muestra un marcador en vivo con los puntos ganados por cada jugador. La partida avanza sola a la siguiente pregunta tras unos segundos.
+- Tras cada pregunta hay una breve fase de **revelado**: se ilumina la opción correcta y se marca en rojo la opción elegida si era incorrecta. La partida avanza sola a la siguiente pregunta tras unos segundos.
+- **Ranking en vivo siempre visible**: tanto en el dashboard del anfitrión (panel lateral) como en la pantalla de cada jugador (franja compacta arriba de la pregunta) se ve en todo momento la clasificación actual por puntos, no solo al terminar la partida; tras cada revelado se ve además cuántos puntos acaba de ganar cada uno.
 - Configuración del anfitrión: nº máximo de jugadores, dificultad, nº de preguntas (5-20) y duración de cada una. Igual que en Pasapalabra, el interruptor **"Usar dispositivo en modo TV"** decide si el anfitrión juega también o solo hace de panel/marcador.
 - Al terminar, podio con los 3 primeros puestos y ranking completo por puntos y aciertos.
 
@@ -220,6 +221,7 @@ client/src/pages/quiz/QuizHostGame.tsx       Dashboard en vivo: pregunta, cronó
 client/src/pages/quiz/QuizPlayerGame.tsx     Pantalla del jugador: 4 opciones de colores al estilo Kahoot, puntos y racha
 client/src/context/QuizContext.tsx           Estado de red del quiz (sala, ranking final, jugador), vía Socket.IO
 client/src/components/QuizPodium.tsx         Podio con los 3 primeros puestos, reutilizado por el anfitrión y los jugadores
+client/src/components/QuizLiveRanking.tsx    Ranking en vivo siempre visible (panel lateral en el anfitrión, franja compacta en el jugador)
 client/src/components/RoscoWheel.tsx  Rueda del rosco (SVG), con el avatar del jugador en el centro
 client/src/components/RoscoPlayer.tsx Panel de juego compacto (sin scroll) reutilizado por el modo en red y el modo local
 client/src/components/Presenter.tsx   Presentadora animada (SVG): expresiones y boca sincronizada con el TTS del dashboard del anfitrión

@@ -1577,48 +1577,116 @@ button {
   color: var(--red);
 }
 
-.quiz-leaderboard {
-  width: 100%;
-  max-width: 420px;
-  margin-top: 4px;
-}
-
 .quiz-leaderboard-title {
   margin: 0 0 8px;
   font-size: 1rem;
+  text-align: center;
 }
 
-.quiz-leaderboard-row {
+.quiz-host-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+}
+
+.quiz-host-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  max-width: 640px;
+}
+
+.quiz-host-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.quiz-live-ranking {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.quiz-live-ranking-compact {
+  flex-direction: row;
+  overflow-x: auto;
+  max-width: 640px;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.quiz-live-ranking-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: var(--card);
-  padding: 8px 14px;
-  border-radius: 12px;
-  margin-bottom: 6px;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
-.quiz-leaderboard-rank {
-  width: 20px;
+.quiz-host-sidebar .quiz-live-ranking-row {
+  border-radius: 12px;
+  font-size: 0.85rem;
+  white-space: normal;
+}
+
+.quiz-live-ranking-row-self {
+  border: 2px solid var(--accent);
+}
+
+.quiz-live-ranking-rank {
   font-weight: 700;
   color: var(--text-dim);
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
-.quiz-leaderboard-name {
-  flex: 1;
-  text-align: left;
+.quiz-live-ranking-name {
   font-weight: 600;
-  font-size: 0.9rem;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.quiz-leaderboard-delta {
+.quiz-host-sidebar .quiz-live-ranking-name {
+  flex: 1;
+}
+
+.quiz-live-ranking-delta {
   color: var(--green);
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
-.quiz-leaderboard-score {
+.quiz-live-ranking-score {
   font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+@media (max-width: 760px) {
+  .quiz-host-layout {
+    flex-direction: column;
+    align-items: center;
+  }
+  .quiz-host-sidebar {
+    width: 100%;
+    max-width: 640px;
+  }
 }
 
 .quiz-podium-wrap {
