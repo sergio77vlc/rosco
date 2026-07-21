@@ -1,10 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function Home() {
+export default function PasapalabraHome() {
   const navigate = useNavigate();
   return (
     <div className="screen screen-center">
+      <button className="back-to-hub-link" onClick={() => navigate('/')}>
+        ← Todos los juegos
+      </button>
       <h1 className="app-title">🎯 Rosco Multijugador</h1>
       <p className="app-subtitle">El clásico juego de Pasapalabra, con tus amigos y sus móviles.</p>
       <div className="home-actions">

@@ -2,7 +2,8 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { GameProvider } from './context/GameContext';
 import { LocalGameProvider } from './context/LocalGameContext';
-import Home from './pages/Home';
+import GamesHub from './pages/GamesHub';
+import PasapalabraHome from './pages/PasapalabraHome';
 import HostSetup from './pages/host/HostSetup';
 import HostRoomPage from './pages/host/HostRoomPage';
 import JoinScan from './pages/join/JoinScan';
@@ -16,7 +17,8 @@ export default function App() {
     <GameProvider>
       <LocalGameProvider>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<GamesHub />} />
+          <Route path="/pasapalabra" element={<PasapalabraHome />} />
           <Route path="/host" element={<HostSetup />} />
           <Route path="/host/:code" element={<HostRoomPage />} />
           <Route path="/join" element={<JoinScan />} />

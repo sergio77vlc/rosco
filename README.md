@@ -1,10 +1,11 @@
 # Rosco Multijugador
 
-Juego web multijugador tipo "Pasapalabra" (rosco). Un dispositivo hospeda la partida y la muestra en tiempo real; cada jugador juega desde su propio móvil, uniéndose escaneando un código QR o introduciendo un código de sala.
+Plataforma web con varios minijuegos. De momento incluye un juego multijugador tipo "Pasapalabra" (rosco): un dispositivo hospeda la partida y la muestra en tiempo real; cada jugador juega desde su propio móvil, uniéndose escaneando un código QR o introduciendo un código de sala.
 
 ## Funcionalidades
 
-- Pantalla inicial: **hospedar partida**, **unirse escaneando un QR**, o **jugar en el mismo dispositivo** (modo local, sin red).
+- **Página de inicio (`/`)**: una sala de juegos con una tarjeta por cada juego disponible (de momento solo Pasapalabra), con un botón para **jugar** y otro que enlaza a su **repositorio de GitHub**. Preparada para añadir más juegos: cada uno se registra en `client/src/pages/GamesHub.tsx` con su propia tarjeta.
+- Pantalla de inicio de Pasapalabra (`/pasapalabra`): **hospedar partida**, **unirse escaneando un QR**, o **jugar en el mismo dispositivo** (modo local, sin red).
 - Configuración del anfitrión: número de jugadores (2-6), duración del cronómetro y elección del rosco. Para jugar solo (1 jugador) se usa el modo "Jugar en este dispositivo", no hospedar.
 - La partida arranca automáticamente en cuanto se llena el aforo de jugadores, sin esperar a que el anfitrión pulse nada (también se puede empezar antes manualmente).
 - Interruptor **"Usar dispositivo en modo TV"** en la configuración de hospedar: por defecto está desactivado y el anfitrión juega también como uno más (configura su nombre y avatar, y su pantalla pasa a mostrar su propio rosco en cuanto empieza la partida). Si se activa, el dispositivo que hospeda pasa a ser solo un panel espectador que muestra todos los roscos en directo, como un marcador de TV, sin jugar.
@@ -189,6 +190,8 @@ server/src/gameEngine.ts      Motor del juego: turnos, pasapalabra, corrección,
 server/src/socketHandlers.ts  Eventos de Socket.IO (host y jugadores)
 server/src/rooms.ts           Estado de las salas en memoria
 
+client/src/pages/GamesHub.tsx       Página de inicio: sala de juegos, con la lista de juegos disponibles
+client/src/pages/PasapalabraHome.tsx Página de inicio de Pasapalabra (hospedar / unirse / modo local)
 client/src/pages/host/*    Configuración, sala de espera (QR), dashboard en vivo y resultados
 client/src/pages/join/*    Escaneo de QR / código manual, sala de espera y pantalla de juego
 client/src/pages/local/*   Modo "pasa y juega" en el mismo dispositivo (configuración, turnos, resultados)
