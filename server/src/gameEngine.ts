@@ -29,15 +29,18 @@ export interface ResolutionOutcome {
   finished: boolean;
 }
 
-export function submitAnswer(player: ServerPlayer, answerText: string): ResolutionOutcome & { correct: boolean } {
-  if (player.finishedAt) return { correct: false, finished: true };
+export function submitAnswer(
+  player: ServerPlayer,
+  answerText: string,
+): ResolutionOutcome & { correct: boolean; correctAnswer: string } {
+  if (player.finishedAt) return { correct: false, finished: true, correctAnswer: '' };
   const clue = player.rosco.letters[player.currentIndex];
   const correct = isAnswerCorrect(answerText, clue.answer);
   const result = resolveCurrentLetter(player.progress, player.currentIndex, correct ? 'correct' : 'wrong');
   player.progress = result.progress;
   player.currentIndex = result.currentIndex;
   if (result.finished && !player.finishedAt) player.finishedAt = Date.now();
-  return { correct, finished: result.finished };
+  return { correct, finished: result.finished, correctAnswer: clue.answer };
 }
 
 export function passLetter(player: ServerPlayer): ResolutionOutcome {

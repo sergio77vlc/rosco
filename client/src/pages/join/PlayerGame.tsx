@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import RoscoPlayer from '../../components/RoscoPlayer';
 import AvatarView from '../../components/AvatarView';
@@ -6,10 +6,20 @@ import { useGame } from '../../context/GameContext';
 import { getSocket } from '../../socket';
 import { rankPlayers } from '../../utils/rank';
 
+interface OutcomeEvent {
+  seq: number;
+  playerName: string;
+  correctCount: number;
+  result: 'correct' | 'wrong' | 'passed';
+  correctAnswer: string | null;
+}
+
 export default function PlayerGame() {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const { room, playerId } = useGame();
+  const [outcomeEvent, setOutcomeEvent] = useState<OutcomeEvent | null>(null);
+  const seqRef = useRef(0);
 
   const player = room?.players.find((p) => p.id === playerId);
 
@@ -58,6 +68,35 @@ export default function PlayerGame() {
   const activePlayer = room.players.find((p) => p.id === room.activePlayerId);
   const otherPlayers = room.players.filter((p) => p.id !== player.id);
 
+  function submitAnswer(answerText: string) {
+    getSocket().emit(
+      'player:submitAnswer',
+      { code, answerText },
+      (res: { correct: boolean; correctAnswer: string | null }) => {
+        seqRef.current += 1;
+        setOutcomeEvent({
+          seq: seqRef.current,
+          playerName: player!.name,
+          correctCount: res.correct ? player!.correctCount + 1 : player!.correctCount,
+          result: res.correct ? 'correct' : 'wrong',
+          correctAnswer: res.correctAnswer,
+        });
+      },
+    );
+  }
+
+  function pass() {
+    getSocket().emit('player:pass', { code });
+    seqRef.current += 1;
+    setOutcomeEvent({
+      seq: seqRef.current,
+      playerName: player!.name,
+      correctCount: player!.correctCount,
+      result: 'passed',
+      correctAnswer: null,
+    });
+  }
+
   return (
     <RoscoPlayer
       letters={player.rosco.letters}
@@ -66,8 +105,8 @@ export default function PlayerGame() {
       finished={Boolean(player.finishedAt)}
       canAct={isMyTurn}
       endsAt={room.endsAt}
-      onSubmitAnswer={(answerText) => getSocket().emit('player:submitAnswer', { code, answerText })}
-      onPass={() => getSocket().emit('player:pass', { code })}
+      onSubmitAnswer={submitAnswer}
+      onPass={pass}
       playerName={player.name}
       playerAvatar={player.avatar}
       playerColor={player.color}
@@ -76,6 +115,21 @@ export default function PlayerGame() {
       turnLabel={isMyTurn ? '¡Tu turno!' : undefined}
       waitingMessage={!isMyTurn && activePlayer ? `Turno de ${activePlayer.name}...` : 'Esperando turno...'}
       activePlayerName={activePlayer?.name ?? null}
+      outcomeEvent={outcomeEvent}
+      spectateTarget={
+        !isMyTurn && activePlayer
+          ? {
+              name: activePlayer.name,
+              avatar: activePlayer.avatar,
+              color: activePlayer.color,
+              letters: activePlayer.rosco.letters,
+              progress: activePlayer.progress,
+              currentIndex: activePlayer.currentIndex,
+              correctCount: activePlayer.correctCount,
+              wrongCount: activePlayer.wrongCount,
+            }
+          : null
+      }
       headerExtra={
         otherPlayers.length > 0 ? (
           <div className="mini-scoreboard">

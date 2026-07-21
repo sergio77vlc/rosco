@@ -20,6 +20,7 @@ export interface LocalOutcomeEvent {
   playerName: string;
   correctCount: number;
   result: 'correct' | 'wrong' | 'passed';
+  correctAnswer: string | null;
 }
 
 interface LocalGameState {
@@ -45,7 +46,7 @@ type LocalGameAction =
       timerSeconds: number;
       players: { name: string; color: string; avatar: string }[];
     }
-  | { type: 'RESOLVE'; resolution: 'correct' | 'wrong' | 'passed' }
+  | { type: 'RESOLVE'; resolution: 'correct' | 'wrong' | 'passed'; correctAnswer: string }
   | { type: 'TIME_UP' }
   | { type: 'RESET' };
 
@@ -112,6 +113,7 @@ function localGameReducer(state: LocalGameState, action: LocalGameAction): Local
         playerName: player.name,
         correctCount: updatedPlayer.progress.filter((s) => s === 'correct').length,
         result: action.resolution,
+        correctAnswer: action.resolution === 'wrong' ? action.correctAnswer : null,
       };
 
       // Un acierto conserva el turno (salvo que ya no le queden letras); un fallo o un
@@ -179,13 +181,14 @@ export function LocalGameProvider({ children }: { children: React.ReactNode }) {
     if (!player || player.finishedAt) return;
     const clue = player.rosco.letters[player.currentIndex];
     const correct = isAnswerCorrect(answerText, clue.answer);
-    dispatch({ type: 'RESOLVE', resolution: correct ? 'correct' : 'wrong' });
+    dispatch({ type: 'RESOLVE', resolution: correct ? 'correct' : 'wrong', correctAnswer: clue.answer });
   }
 
   function pass() {
     const player = state.players[state.activePlayerIndex];
     if (!player || player.finishedAt) return;
-    dispatch({ type: 'RESOLVE', resolution: 'passed' });
+    const clue = player.rosco.letters[player.currentIndex];
+    dispatch({ type: 'RESOLVE', resolution: 'passed', correctAnswer: clue.answer });
   }
 
   function resetGame() {

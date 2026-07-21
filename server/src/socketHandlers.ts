@@ -194,14 +194,18 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
     }
   });
 
-  socket.on('player:submitAnswer', (payload: PlayerSubmitAnswerPayload) => {
-    const room = getRoom(payload.code);
-    if (!room || room.status !== 'playing') return;
-    const player = Array.from(room.players.values()).find((p) => p.socketId === socket.id);
-    if (!player || player.id !== room.activePlayerId) return;
-    const { correct, finished } = submitAnswer(player, payload.answerText);
-    advanceTurn(io, room, player, correct && !finished);
-  });
+  socket.on(
+    'player:submitAnswer',
+    (payload: PlayerSubmitAnswerPayload, ack?: (res: { correct: boolean; correctAnswer: string | null }) => void) => {
+      const room = getRoom(payload.code);
+      if (!room || room.status !== 'playing') return;
+      const player = Array.from(room.players.values()).find((p) => p.socketId === socket.id);
+      if (!player || player.id !== room.activePlayerId) return;
+      const { correct, finished, correctAnswer } = submitAnswer(player, payload.answerText);
+      advanceTurn(io, room, player, correct && !finished);
+      ack?.({ correct, correctAnswer: correct ? null : correctAnswer });
+    },
+  );
 
   socket.on('player:pass', (payload: PlayerPassPayload) => {
     const room = getRoom(payload.code);
