@@ -280,7 +280,7 @@ export default function RoscoPlayer({
 
       {canAct && !turnReady && !finished ? (
         <div className="turn-gate">
-          <Presenter expression={presenterExpression} speaking={tts.speaking} size={150} className="turn-gate-presenter" />
+          <Presenter expression={presenterExpression} speaking={tts.speaking} size={200} className="turn-gate-presenter" />
           <AvatarView avatar={playerAvatar} color={playerColor} size={64} />
           <h2 className="turn-gate-title">¡Tu turno, {playerName}!</h2>
           <p className="turn-gate-hint">Toca cuando estés listo para ver tu pregunta.</p>
@@ -295,7 +295,7 @@ export default function RoscoPlayer({
             <Presenter
               expression={presenterExpression}
               speaking={tts.speaking}
-              size={70}
+              size={100}
               className="inline-presenter"
             />
           </div>
@@ -431,7 +431,7 @@ export default function RoscoPlayer({
               color={spectateTarget.color}
               size={340}
             />
-            <Presenter expression="neutral" speaking={tts.speaking} size={70} className="inline-presenter" />
+            <Presenter expression="neutral" speaking={tts.speaking} size={100} className="inline-presenter" />
           </div>
           {spectateLetter && (
             <div className="clue-card clue-card-spectator">

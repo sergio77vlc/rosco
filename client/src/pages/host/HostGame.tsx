@@ -94,7 +94,7 @@ export default function HostGame({ room }: HostGameProps) {
 
       {activePlayer && (
         <div className="host-stage">
-          <Presenter expression={expression} speaking={tts.speaking} size={230} className="host-presenter" />
+          <Presenter expression={expression} speaking={tts.speaking} size={280} className="host-presenter" />
           <div className="host-stage-wheel">
             <PlayerBadge
               name={activePlayer.name}

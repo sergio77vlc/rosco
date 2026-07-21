@@ -15,7 +15,7 @@ export default function HostSetup() {
 
   const [maxPlayers, setMaxPlayers] = useState(4);
   const [timerSeconds, setTimerSeconds] = useState(120);
-  const [hostIsPlayer, setHostIsPlayer] = useState(false);
+  const [tvMode, setTvMode] = useState(false);
   const [hostName, setHostName] = useState('');
   const [hostColor, setHostColor] = useState<string>(PLAYER_COLORS[0]);
   const [hostAvatar, setHostAvatar] = useState<string>(DEFAULT_AVATAR);
@@ -38,7 +38,7 @@ export default function HostSetup() {
         selection: selectedRosco,
         timerSeconds,
       });
-      if (hostIsPlayer) {
+      if (!tvMode) {
         const joinRes = await emitWithAck<{ ok: true; playerId: string }>('player:joinRoom', {
           code: res.code,
           name: hostName.trim() || 'Jugador',
@@ -81,25 +81,25 @@ export default function HostSetup() {
       <section className="setup-section">
         <label className="switch-row">
           <span>
-            <strong>También soy un jugador</strong>
+            <strong>📺 Usar dispositivo en modo TV</strong>
             <span className="switch-row-hint">
-              {hostIsPlayer
-                ? 'Este dispositivo juega como uno más y no mostrará el panel con todos los roscos.'
-                : 'Este dispositivo será solo el panel que muestra todos los roscos en directo.'}
+              {tvMode
+                ? 'Este dispositivo será solo el panel que muestra todos los roscos en directo.'
+                : 'Este dispositivo juega también como uno más, además de mostrar la partida.'}
             </span>
           </span>
           <input
             type="checkbox"
             className="switch-input"
-            checked={hostIsPlayer}
-            onChange={(e) => setHostIsPlayer(e.target.checked)}
+            checked={tvMode}
+            onChange={(e) => setTvMode(e.target.checked)}
           />
           <span className="switch-track" aria-hidden="true">
             <span className="switch-thumb" />
           </span>
         </label>
 
-        {hostIsPlayer && (
+        {!tvMode && (
           <div className="setup-solo-fields">
             <input
               type="text"
