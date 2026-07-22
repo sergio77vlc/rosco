@@ -1,18 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { PLAYER_AVATARS } from '@rosco/shared';
+import { DEFAULT_PLAYER_COLOR, PLAYER_AVATARS } from '@rosco/shared';
 import AvatarView from './AvatarView';
 
 interface AvatarPickerProps {
   value: string;
-  color: string;
   onChange: (avatar: string) => void;
 }
 
 const CAPTURE_SIZE = 240;
 
-export default function AvatarPicker({ value, color, onChange }: AvatarPickerProps) {
+export default function AvatarPicker({ value, onChange }: AvatarPickerProps) {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -67,32 +67,56 @@ export default function AvatarPicker({ value, color, onChange }: AvatarPickerPro
     closeCamera();
   }
 
+  function chooseAvatar(a: string) {
+    onChange(a);
+    setPickerOpen(false);
+  }
+
   return (
     <div className="avatar-picker">
-      <AvatarView avatar={value} color={color} size={64} className="avatar-picker-preview" />
-      <div className="avatar-grid">
-        {PLAYER_AVATARS.map((a) => (
-          <button
-            key={a}
-            type="button"
-            className={`avatar-option ${value === a ? 'avatar-option-active' : ''}`}
-            onClick={() => onChange(a)}
-            aria-label={`Elegir avatar ${a}`}
-          >
-            {a}
-          </button>
-        ))}
-        <button
-          type="button"
-          className="avatar-option avatar-option-camera"
-          onClick={openCamera}
-          aria-label="Hacer una foto para el avatar"
-          title="Hacer una foto"
-        >
-          📷
+      <AvatarView avatar={value} color={DEFAULT_PLAYER_COLOR} size={140} className="avatar-picker-preview" />
+
+      <div className="avatar-picker-actions">
+        <button type="button" className="btn btn-primary avatar-picker-camera-btn" onClick={openCamera}>
+          📷 Hacer una foto
+        </button>
+        <button type="button" className="btn btn-secondary" onClick={() => setPickerOpen(true)}>
+          🖼️ Elegir avatar
         </button>
       </div>
+
       {cameraError && <p className="error-text">{cameraError}</p>}
+
+      {pickerOpen && (
+        <div className="avatar-modal-backdrop" onClick={() => setPickerOpen(false)}>
+          <div className="avatar-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="avatar-modal-header">
+              <h3>Elige tu avatar</h3>
+              <button
+                type="button"
+                className="btn-icon-flat"
+                onClick={() => setPickerOpen(false)}
+                aria-label="Cerrar selector de avatar"
+              >
+                ✖️
+              </button>
+            </div>
+            <div className="avatar-grid">
+              {PLAYER_AVATARS.map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  className={`avatar-option ${value === a ? 'avatar-option-active' : ''}`}
+                  onClick={() => chooseAvatar(a)}
+                  aria-label={`Elegir avatar ${a}`}
+                >
+                  {a}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {cameraOpen && (
         <div className="camera-modal-backdrop" onClick={closeCamera}>

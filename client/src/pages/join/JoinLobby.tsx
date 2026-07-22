@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { DEFAULT_AVATAR, PLAYER_COLORS } from '@rosco/shared';
+import { DEFAULT_AVATAR, DEFAULT_PLAYER_COLOR } from '@rosco/shared';
 import PlayerBadge from '../../components/PlayerBadge';
 import AvatarPicker from '../../components/AvatarPicker';
 import { useGame } from '../../context/GameContext';
@@ -15,7 +15,6 @@ export default function JoinLobby() {
   const tts = useSpeechSynthesis();
 
   const [name, setName] = useState('');
-  const [color, setColor] = useState<string>(PLAYER_COLORS[0]);
   const [avatar, setAvatar] = useState<string>(DEFAULT_AVATAR);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +44,7 @@ export default function JoinLobby() {
       const res = await emitWithAck<{ ok: true; playerId: string }>('player:joinRoom', {
         code,
         name: name.trim() || 'Jugador',
-        color,
+        color: DEFAULT_PLAYER_COLOR,
         avatar,
       });
       setPlayerId(res.playerId);
@@ -73,19 +72,7 @@ export default function JoinLobby() {
               autoFocus
             />
           </label>
-          <div className="color-picker">
-            {PLAYER_COLORS.map((c) => (
-              <button
-                type="button"
-                key={c}
-                className={`color-swatch ${color === c ? 'color-swatch-active' : ''}`}
-                style={{ backgroundColor: c }}
-                onClick={() => setColor(c)}
-                aria-label={`Elegir color ${c}`}
-              />
-            ))}
-          </div>
-          <AvatarPicker value={avatar} color={color} onChange={setAvatar} />
+          <AvatarPicker value={avatar} onChange={setAvatar} />
           {error && <p className="error-text">{error}</p>}
           <button className="btn btn-primary btn-big" type="submit" disabled={joining}>
             {joining ? 'Entrando...' : '🚀 Entrar a la sala'}

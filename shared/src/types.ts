@@ -131,6 +131,9 @@ export const PLAYER_COLORS = [
   '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899',
 ] as const;
 
+/** Color único para todos los jugadores: el protagonismo lo tiene la foto/avatar, no un color. */
+export const DEFAULT_PLAYER_COLOR = 'transparent';
+
 /** Avatares emoji predefinidos para elegir sin necesidad de cámara. */
 export const PLAYER_AVATARS = [
   '🦁', '🐯', '🐻', '🐼', '🦊', '🐨', '🐸', '🐵',

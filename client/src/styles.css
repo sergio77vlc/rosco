@@ -621,43 +621,74 @@ button {
   color: var(--text-dim);
 }
 
-.color-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-}
-
-.color-swatch {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 3px solid transparent;
-  cursor: pointer;
-}
-
-.color-swatch-active {
-  border-color: white;
-  transform: scale(1.1);
-}
-
 .avatar-picker {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   margin-top: 10px;
 }
 
 .avatar-picker-preview {
-  box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.15);
+  box-shadow: 0 0 0 5px rgba(250, 204, 21, 0.18);
+}
+
+.avatar-picker-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 260px;
+}
+
+.avatar-picker-camera-btn {
+  font-size: 1.05rem;
+  padding: 14px 18px;
+}
+
+.avatar-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.avatar-modal {
+  background: var(--bg-alt);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 340px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.avatar-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.avatar-modal-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text);
 }
 
 .avatar-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 8px;
-  max-width: 320px;
 }
 
 .avatar-option {
@@ -681,11 +712,6 @@ button {
 .avatar-option-active {
   border-color: var(--accent);
   background: rgba(250, 204, 21, 0.15);
-}
-
-.avatar-option-camera {
-  font-size: 1.2rem;
-  background: rgba(139, 92, 246, 0.15);
 }
 
 .camera-modal-backdrop {
@@ -746,13 +772,6 @@ button {
   flex-shrink: 0;
 }
 
-.color-swatch-small {
-  width: 24px;
-  height: 24px;
-  border-width: 2px;
-  flex-shrink: 0;
-}
-
 .local-player-list {
   display: flex;
   flex-direction: column;
@@ -775,12 +794,6 @@ button {
   padding: 8px 10px;
   color: var(--text);
   font-size: 0.95rem;
-}
-
-.local-player-colors {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
 }
 
 .host-game-header {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DEFAULT_AVATAR, PLAYER_COLORS, type RoscoSelection } from '@rosco/shared';
+import { DEFAULT_AVATAR, DEFAULT_PLAYER_COLOR, type RoscoSelection } from '@rosco/shared';
 import { useGame } from '../../context/GameContext';
 import RoscoPicker from '../../components/RoscoPicker';
 import AvatarPicker from '../../components/AvatarPicker';
@@ -18,7 +18,6 @@ export default function HostSetup() {
   const [timerSeconds, setTimerSeconds] = useState(120);
   const [tvMode, setTvMode] = useState(false);
   const [hostName, setHostName] = useState('');
-  const [hostColor, setHostColor] = useState<string>(PLAYER_COLORS[0]);
   const [hostAvatar, setHostAvatar] = useState<string>(DEFAULT_AVATAR);
 
   const [selectedRosco, setSelectedRosco] = useState<RoscoSelection | null>(null);
@@ -44,7 +43,7 @@ export default function HostSetup() {
         const joinRes = await emitWithAck<{ ok: true; playerId: string }>('player:joinRoom', {
           code: res.code,
           name: hostName.trim() || 'Jugador',
-          color: hostColor,
+          color: DEFAULT_PLAYER_COLOR,
           avatar: hostAvatar,
         });
         setPlayerId(joinRes.playerId);
@@ -112,19 +111,7 @@ export default function HostSetup() {
               maxLength={20}
               className="setup-solo-name-input"
             />
-            <div className="color-picker">
-              {PLAYER_COLORS.map((c) => (
-                <button
-                  type="button"
-                  key={c}
-                  className={`color-swatch ${hostColor === c ? 'color-swatch-active' : ''}`}
-                  style={{ backgroundColor: c }}
-                  onClick={() => setHostColor(c)}
-                  aria-label={`Elegir color ${c}`}
-                />
-              ))}
-            </div>
-            <AvatarPicker value={hostAvatar} color={hostColor} onChange={setHostAvatar} />
+            <AvatarPicker value={hostAvatar} onChange={setHostAvatar} />
           </div>
         )}
       </section>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PLAYER_AVATARS, PLAYER_COLORS, type Rosco, type RoscoSelection } from '@rosco/shared';
+import { DEFAULT_PLAYER_COLOR, PLAYER_AVATARS, type Rosco, type RoscoSelection } from '@rosco/shared';
 import RoscoPicker from '../../components/RoscoPicker';
 import AvatarPicker from '../../components/AvatarPicker';
 import AvatarView from '../../components/AvatarView';
@@ -9,10 +9,6 @@ import { useLocalGame } from '../../context/LocalGameContext';
 
 function defaultNames(count: number): string[] {
   return Array.from({ length: count }, (_, i) => `Jugador ${i + 1}`);
-}
-
-function defaultColors(count: number): string[] {
-  return Array.from({ length: count }, (_, i) => PLAYER_COLORS[i % PLAYER_COLORS.length]);
 }
 
 function defaultAvatars(count: number): string[] {
@@ -25,7 +21,6 @@ export default function LocalSetup() {
 
   const [playerCount, setPlayerCount] = useState(2);
   const [names, setNames] = useState<string[]>(() => defaultNames(2));
-  const [colors, setColors] = useState<string[]>(() => defaultColors(2));
   const [avatars, setAvatars] = useState<string[]>(() => defaultAvatars(2));
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [timerSeconds, setTimerSeconds] = useState(120);
@@ -39,11 +34,6 @@ export default function LocalSetup() {
     setNames((prev) => {
       const arr = [...prev];
       while (arr.length < clamped) arr.push(`Jugador ${arr.length + 1}`);
-      return arr.slice(0, clamped);
-    });
-    setColors((prev) => {
-      const arr = [...prev];
-      while (arr.length < clamped) arr.push(PLAYER_COLORS[arr.length % PLAYER_COLORS.length]);
       return arr.slice(0, clamped);
     });
     setAvatars((prev) => {
@@ -61,7 +51,7 @@ export default function LocalSetup() {
     setError(null);
     const players = names.map((name, i) => ({
       name: name.trim() || `Jugador ${i + 1}`,
-      color: colors[i],
+      color: DEFAULT_PLAYER_COLOR,
       avatar: avatars[i],
     }));
     setStarting(true);
@@ -122,7 +112,7 @@ export default function LocalSetup() {
                   onClick={() => setExpandedIndex(expandedIndex === i ? null : i)}
                   aria-label={`Cambiar avatar de jugador ${i + 1}`}
                 >
-                  <AvatarView avatar={avatars[i]} color={colors[i]} size={40} />
+                  <AvatarView avatar={avatars[i]} color={DEFAULT_PLAYER_COLOR} size={56} />
                 </button>
                 <input
                   type="text"
@@ -133,23 +123,10 @@ export default function LocalSetup() {
                   placeholder={`Jugador ${i + 1}`}
                   maxLength={20}
                 />
-                <div className="local-player-colors">
-                  {PLAYER_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      className={`color-swatch color-swatch-small ${colors[i] === c ? 'color-swatch-active' : ''}`}
-                      style={{ backgroundColor: c }}
-                      onClick={() => setColors((prev) => prev.map((col, idx) => (idx === i ? c : col)))}
-                      aria-label={`Elegir color ${c} para jugador ${i + 1}`}
-                    />
-                  ))}
-                </div>
               </div>
               {expandedIndex === i && (
                 <AvatarPicker
                   value={avatars[i]}
-                  color={colors[i]}
                   onChange={(a) => setAvatars((prev) => prev.map((av, idx) => (idx === i ? a : av)))}
                 />
               )}

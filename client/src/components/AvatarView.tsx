@@ -11,7 +11,7 @@ export function isPhotoAvatar(avatar: string): boolean {
   return avatar?.startsWith('data:image');
 }
 
-export default function AvatarView({ avatar, size = 40, color = '#8b5cf6', className = '' }: AvatarViewProps) {
+export default function AvatarView({ avatar, size = 40, color = 'transparent', className = '' }: AvatarViewProps) {
   const style: React.CSSProperties = { width: size, height: size };
 
   if (isPhotoAvatar(avatar)) {

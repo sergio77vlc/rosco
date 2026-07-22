@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DEFAULT_AVATAR, PLAYER_COLORS, type QuizDifficulty } from '@rosco/shared';
+import { DEFAULT_AVATAR, DEFAULT_PLAYER_COLOR, type QuizDifficulty } from '@rosco/shared';
 import { useQuiz } from '../../context/QuizContext';
 import AvatarPicker from '../../components/AvatarPicker';
 import { QUIZ_DIFFICULTY_ICONS, QUIZ_DIFFICULTY_LABELS, QUIZ_DURATION_OPTIONS } from '../../constants';
@@ -22,7 +22,6 @@ export default function QuizHostSetup() {
   const [questionDurationSeconds, setQuestionDurationSeconds] = useState(20);
   const [tvMode, setTvMode] = useState(false);
   const [hostName, setHostName] = useState('');
-  const [hostColor, setHostColor] = useState<string>(PLAYER_COLORS[0]);
   const [hostAvatar, setHostAvatar] = useState<string>(DEFAULT_AVATAR);
 
   const [creating, setCreating] = useState(false);
@@ -43,7 +42,7 @@ export default function QuizHostSetup() {
         const joinRes = await emitWithAck<{ ok: true; playerId: string }>('quiz:playerJoinRoom', {
           code: res.code,
           name: hostName.trim() || 'Jugador',
-          color: hostColor,
+          color: DEFAULT_PLAYER_COLOR,
           avatar: hostAvatar,
         });
         setPlayerId(joinRes.playerId);
@@ -111,19 +110,7 @@ export default function QuizHostSetup() {
               maxLength={20}
               className="setup-solo-name-input"
             />
-            <div className="color-picker">
-              {PLAYER_COLORS.map((c) => (
-                <button
-                  type="button"
-                  key={c}
-                  className={`color-swatch ${hostColor === c ? 'color-swatch-active' : ''}`}
-                  style={{ backgroundColor: c }}
-                  onClick={() => setHostColor(c)}
-                  aria-label={`Elegir color ${c}`}
-                />
-              ))}
-            </div>
-            <AvatarPicker value={hostAvatar} color={hostColor} onChange={setHostAvatar} />
+            <AvatarPicker value={hostAvatar} onChange={setHostAvatar} />
           </div>
         )}
       </section>
