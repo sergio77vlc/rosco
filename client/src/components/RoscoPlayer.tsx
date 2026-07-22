@@ -341,43 +341,6 @@ export default function RoscoPlayer({
                   </div>
                 </div>
 
-                {settingsOpen && (
-                  <div className="tts-popover">
-                    <label className="tts-rate-label">
-                      Velocidad: {tts.rate.toFixed(2)}x
-                      <input
-                        type="range"
-                        min={tts.MIN_RATE}
-                        max={tts.MAX_RATE}
-                        step={0.25}
-                        value={tts.rate}
-                        onChange={(e) => tts.setRate(Number(e.target.value))}
-                      />
-                    </label>
-                    <label className="tts-auto-label">
-                      <input
-                        type="checkbox"
-                        checked={tts.autoRead}
-                        onChange={(e) => tts.setAutoRead(e.target.checked)}
-                      />
-                      Leer pistas automáticamente
-                    </label>
-                    <label className="tts-auto-label">
-                      <input
-                        type="checkbox"
-                        checked={tts.narrate}
-                        onChange={(e) => tts.setNarrate(e.target.checked)}
-                      />
-                      Narración (aciertos, fallos y turnos)
-                    </label>
-                    {tts.silentWarning && (
-                      <p className="tts-warning">
-                        No se ha oído el audio. Prueba a bajar "Shields" en Brave, usar Chrome, o jugar
-                        desde el móvil.
-                      </p>
-                    )}
-                  </div>
-                )}
               </div>
 
               <form
@@ -453,6 +416,48 @@ export default function RoscoPlayer({
       ) : (
         <div className="answer-form-compact answer-form-waiting">
           <p className="waiting-turn-message">⏳ {waitingMessage}</p>
+        </div>
+      )}
+
+      {settingsOpen && (
+        <div className="tts-modal-backdrop" onClick={() => setSettingsOpen(false)}>
+          <div className="tts-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="tts-modal-header">
+              <h3>🔊 Ajustes de voz</h3>
+              <button
+                type="button"
+                className="btn-icon-flat"
+                onClick={() => setSettingsOpen(false)}
+                aria-label="Cerrar ajustes"
+              >
+                ✖️
+              </button>
+            </div>
+            <label className="tts-rate-label">
+              Velocidad: {tts.rate.toFixed(2)}x
+              <input
+                type="range"
+                min={tts.MIN_RATE}
+                max={tts.MAX_RATE}
+                step={0.25}
+                value={tts.rate}
+                onChange={(e) => tts.setRate(Number(e.target.value))}
+              />
+            </label>
+            <label className="tts-auto-label">
+              <input type="checkbox" checked={tts.autoRead} onChange={(e) => tts.setAutoRead(e.target.checked)} />
+              Leer pistas automáticamente
+            </label>
+            <label className="tts-auto-label">
+              <input type="checkbox" checked={tts.narrate} onChange={(e) => tts.setNarrate(e.target.checked)} />
+              Narración (aciertos, fallos y turnos)
+            </label>
+            {tts.silentWarning && (
+              <p className="tts-warning">
+                No se ha oído el audio. Prueba a bajar "Shields" en Brave, usar Chrome, o jugar desde el móvil.
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>

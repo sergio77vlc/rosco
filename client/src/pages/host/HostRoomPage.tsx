@@ -44,6 +44,17 @@ export default function HostRoomPage() {
   }
 
   if (room.status === 'lobby') return <HostLobby room={room} />;
+
+  if (playerId) {
+    // El anfitrión también juega: nunca debe llegar a ver el panel de monitoreo, ni
+    // siquiera un instante — se le redirige a su propia pantalla de juego (efecto de arriba).
+    return (
+      <div className="screen screen-center">
+        <p className="app-subtitle">Cargando partida...</p>
+      </div>
+    );
+  }
+
   if (room.status === 'playing') return <HostGame room={room} />;
   return <HostResults room={room} />;
 }

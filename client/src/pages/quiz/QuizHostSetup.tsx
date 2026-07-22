@@ -6,7 +6,7 @@ import AvatarPicker from '../../components/AvatarPicker';
 import { QUIZ_DIFFICULTY_ICONS, QUIZ_DIFFICULTY_LABELS, QUIZ_DURATION_OPTIONS } from '../../constants';
 import { saveSession } from '../../utils/session';
 
-const MIN_PLAYERS = 1;
+const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 12;
 const MIN_QUESTIONS = 5;
 const MAX_QUESTIONS = 20;
@@ -86,8 +86,8 @@ export default function QuizHostSetup() {
             <strong>📺 Usar dispositivo en modo TV</strong>
             <span className="switch-row-hint">
               {tvMode
-                ? 'Este dispositivo será solo el panel que muestra las preguntas y el marcador en directo.'
-                : 'Este dispositivo juega también como uno más, además de mostrar la partida.'}
+                ? 'Activado: este dispositivo será solo la pantalla de monitorización, con las preguntas y el marcador en directo. No juega.'
+                : 'Por defecto (desactivado): el anfitrión es un jugador más. No se muestra ninguna pantalla de monitorización en ningún dispositivo.'}
             </span>
           </span>
           <input

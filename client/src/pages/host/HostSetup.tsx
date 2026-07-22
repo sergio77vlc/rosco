@@ -87,8 +87,8 @@ export default function HostSetup() {
             <strong>📺 Usar dispositivo en modo TV</strong>
             <span className="switch-row-hint">
               {tvMode
-                ? 'Este dispositivo será solo el panel que muestra todos los roscos en directo.'
-                : 'Este dispositivo juega también como uno más, además de mostrar la partida.'}
+                ? 'Activado: este dispositivo será solo la pantalla de monitorización, con todos los roscos en directo. No juega.'
+                : 'Por defecto (desactivado): el anfitrión es un jugador más, con su propio rosco. No se muestra ninguna pantalla de monitorización en ningún dispositivo.'}
             </span>
           </span>
           <input

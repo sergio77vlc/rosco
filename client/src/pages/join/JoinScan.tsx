@@ -22,15 +22,8 @@ export default function JoinScan() {
   const [scanError, setScanError] = useState<string | null>(null);
   const scannerRef = useRef<any>(null);
 
-  useEffect(() => {
-    return () => {
-      scannerRef.current?.stop?.().catch(() => {});
-    };
-  }, []);
-
   async function startScanning() {
     setScanError(null);
-    setScanning(true);
     try {
       const { Html5Qrcode } = await import('html5-qrcode');
       const scanner = new Html5Qrcode(SCANNER_ELEMENT_ID);
@@ -48,16 +41,21 @@ export default function JoinScan() {
           /* ignore per-frame scan failures */
         },
       );
-    } catch (err) {
-      setScanError('No se pudo acceder a la cámara. Usa el código manual.');
+      setScanning(true);
+    } catch {
+      setScanError('No se pudo acceder a la cámara. Introduce el código manualmente.');
       setScanning(false);
     }
   }
 
-  async function stopScanning() {
-    await scannerRef.current?.stop?.().catch(() => {});
-    setScanning(false);
-  }
+  useEffect(() => {
+    // La cámara se activa sola al entrar a la página, sin esperar a que el usuario pulse nada.
+    startScanning();
+    return () => {
+      scannerRef.current?.stop?.().catch(() => {});
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleManualSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,23 +66,20 @@ export default function JoinScan() {
   return (
     <div className="screen screen-center">
       <h1 className="screen-title">Unirse a una partida</h1>
+      <p className="app-subtitle">Apunta la cámara al código QR de la sala.</p>
 
-      {!scanning && (
-        <button className="btn btn-primary btn-big" onClick={startScanning}>
-          Escanear código QR
-        </button>
-      )}
-
-      {scanning && (
-        <div className="scanner-wrap">
-          <div id={SCANNER_ELEMENT_ID} />
-          <button className="btn btn-secondary" onClick={stopScanning}>
-            Cancelar
-          </button>
-        </div>
-      )}
-
-      {scanError && <p className="error-text">{scanError}</p>}
+      <div className="scanner-wrap">
+        <div id={SCANNER_ELEMENT_ID} className="scanner-square" />
+        {!scanning && !scanError && <p className="app-subtitle">Activando la cámara...</p>}
+        {scanError && (
+          <>
+            <p className="error-text">{scanError}</p>
+            <button className="btn btn-secondary" onClick={startScanning}>
+              Reintentar
+            </button>
+          </>
+        )}
+      </div>
 
       <div className="divider">o</div>
 

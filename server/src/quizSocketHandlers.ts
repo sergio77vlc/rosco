@@ -21,7 +21,7 @@ import { computeQuizRanking, createQuizPlayer, resolveCurrentQuestion, toPublicQ
 import { drawQuizQuestions } from './quiz/pool.js';
 import type { ServerQuizPlayer, ServerQuizRoom } from './quiz/roomTypes.js';
 
-const MIN_PLAYERS = 1;
+const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 12;
 const MIN_QUESTIONS = 5;
 const MAX_QUESTIONS = 20;

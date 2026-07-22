@@ -5,7 +5,7 @@ Plataforma web de **juegos educativos multijugador**, pensada para jugar con ami
 ## Funcionalidades
 
 - **Página de inicio (`/`)**: una sala de juegos con una tarjeta por cada juego disponible, con un botón para **jugar** y otro que enlaza a su **repositorio de GitHub**. Preparada para añadir más juegos: cada uno se registra en `client/src/pages/GamesHub.tsx` con su propia tarjeta.
-- Pantalla de inicio de Pasapalabra (`/pasapalabra`): **hospedar partida**, **unirse escaneando un QR**, o **jugar en el mismo dispositivo** (modo local, sin red).
+- Pantalla de inicio de Pasapalabra (`/pasapalabra`): **hospedar partida**, **unirse escaneando un QR**, o **jugar en el mismo dispositivo** (modo local, sin red). La pantalla de "unirse" activa la cámara sola nada más entrar, mostrando un visor cuadrado listo para leer el QR sin tener que pulsar nada antes; si no hay cámara disponible, siempre se puede introducir el código de sala a mano.
 - **Reconexión automática** (Pasapalabra y Quiz): si a un jugador se le corta la red o recarga la página sin querer, su navegador recupera solo su sesión (guardada en el propio dispositivo) y vuelve exactamente a la partida en la que estaba, sin tener que volver a introducir su nombre. El anfitrión tiene además un margen de 45 segundos para reconectar tras desconectarse (recarga de página, corte de red) antes de que la partida se dé por finalizada; si el anfitrión juega también como jugador, recupera ambos roles a la vez.
 - Configuración del anfitrión: número de jugadores (2-6), duración del cronómetro y elección del rosco. Para jugar solo (1 jugador) se usa el modo "Jugar en este dispositivo", no hospedar.
 - La partida arranca automáticamente en cuanto se llena el aforo de jugadores, sin esperar a que el anfitrión pulse nada (también se puede empezar antes manualmente).
@@ -32,7 +32,7 @@ Plataforma web de **juegos educativos multijugador**, pensada para jugar con ami
 - La puntuación premia acertar rápido: entre 500 y 1000 puntos por acierto según la rapidez, 0 si se falla o no se responde a tiempo. La pregunta se resuelve en cuanto responden todos los jugadores conectados, o al agotarse el tiempo.
 - Tras cada pregunta hay una breve fase de **revelado**: se ilumina la opción correcta y se marca en rojo la opción elegida si era incorrecta. La partida avanza sola a la siguiente pregunta tras unos segundos.
 - **Ranking en vivo siempre visible**: tanto en el dashboard del anfitrión (panel lateral) como en la pantalla de cada jugador (franja compacta arriba de la pregunta) se ve en todo momento la clasificación actual por puntos, no solo al terminar la partida; tras cada revelado se ve además cuántos puntos acaba de ganar cada uno.
-- Configuración del anfitrión: nº máximo de jugadores, dificultad, nº de preguntas (5-20) y duración de cada una. Igual que en Pasapalabra, el interruptor **"Usar dispositivo en modo TV"** decide si el anfitrión juega también o solo hace de panel/marcador.
+- Configuración del anfitrión: nº máximo de jugadores (mínimo 2), dificultad, nº de preguntas (5-20) y duración de cada una. Igual que en Pasapalabra, el interruptor **"Usar dispositivo en modo TV"** decide si el anfitrión juega también o solo hace de panel/marcador; por defecto está desactivado (el anfitrión es un jugador más y no se muestra ningún panel de monitorización en ningún dispositivo).
 - Al terminar, podio con los 3 primeros puestos y ranking completo por puntos y aciertos.
 
 ## Arquitectura
