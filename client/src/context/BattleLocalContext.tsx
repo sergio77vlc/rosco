@@ -17,6 +17,7 @@ export interface LocalBattleAttack {
   targetId: string;
   weaponId: string;
   damage: number;
+  targetDefeated: boolean;
 }
 
 interface LocalBattleState {
@@ -31,6 +32,8 @@ interface LocalBattleState {
   attackTargetOptions: string[] | null;
   lastAttack: LocalBattleAttack | null;
   lastAnswerCorrect: boolean | null;
+  /** Cambia cada vez que se entra en fase "reveal": identifica cada resolución para disparar animaciones. */
+  revealId: number;
 }
 
 type LocalBattleAction =
@@ -52,6 +55,7 @@ const initialState: LocalBattleState = {
   attackTargetOptions: null,
   lastAttack: null,
   lastAnswerCorrect: null,
+  revealId: 0,
 };
 
 function nextAlivePlayerId(state: LocalBattleState, afterId: string | null): string | null {
@@ -101,11 +105,11 @@ function localBattleReducer(state: LocalBattleState, action: LocalBattleAction):
     case 'ANSWER': {
       if (state.phase !== 'question' || !state.activePlayerId) return state;
       if (!action.correct) {
-        return { ...state, phase: 'reveal', lastAnswerCorrect: false, lastAttack: null };
+        return { ...state, phase: 'reveal', lastAnswerCorrect: false, lastAttack: null, revealId: state.revealId + 1 };
       }
       const opponents = state.players.filter((p) => p.alive && p.id !== state.activePlayerId);
       if (opponents.length === 0) {
-        return { ...state, phase: 'reveal', lastAnswerCorrect: false, lastAttack: null };
+        return { ...state, phase: 'reveal', lastAnswerCorrect: false, lastAttack: null, revealId: state.revealId + 1 };
       }
       return { ...state, phase: 'attacking', attackTargetOptions: opponents.map((p) => p.id) };
     }
@@ -113,11 +117,15 @@ function localBattleReducer(state: LocalBattleState, action: LocalBattleAction):
       if (state.phase !== 'attacking' || !state.activePlayerId) return state;
       const weapon = BATTLE_WEAPONS.find((w) => w.id === action.weaponId) ?? BATTLE_WEAPONS[0];
       let eliminationOrder = state.eliminationOrder;
+      let targetDefeated = false;
       const players = state.players.map((p) => {
         if (p.id !== action.targetId) return p;
         const hp = Math.max(0, p.hp - weapon.damage);
         const alive = hp > 0;
-        if (!alive && p.alive) eliminationOrder = [...eliminationOrder, p.id];
+        if (!alive && p.alive) {
+          eliminationOrder = [...eliminationOrder, p.id];
+          targetDefeated = true;
+        }
         return { ...p, hp, alive };
       });
       const lastAttack: LocalBattleAttack = {
@@ -125,6 +133,7 @@ function localBattleReducer(state: LocalBattleState, action: LocalBattleAction):
         targetId: action.targetId,
         weaponId: weapon.id,
         damage: weapon.damage,
+        targetDefeated,
       };
       return {
         ...state,
@@ -134,6 +143,7 @@ function localBattleReducer(state: LocalBattleState, action: LocalBattleAction):
         lastAnswerCorrect: true,
         lastAttack,
         attackTargetOptions: null,
+        revealId: state.revealId + 1,
       };
     }
     case 'NEXT_TURN': {

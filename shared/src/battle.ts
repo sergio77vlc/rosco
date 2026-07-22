@@ -81,19 +81,26 @@ export const DEFAULT_MII_CONFIG: MiiConfig = {
 // turno sin hacer daño. Gana el último jugador que quede con vida.
 // ==========================================================================
 
+/** Categoría de animación del ataque: cómo viaja el proyectil hasta el objetivo. */
+export type BattleWeaponAnim = 'throw' | 'shoot' | 'punch' | 'explode' | 'drop';
+
 export interface BattleWeapon {
   id: string;
   name: string;
   icon: string;
   damage: number;
+  anim: BattleWeaponAnim;
 }
 
 export const BATTLE_WEAPONS: BattleWeapon[] = [
-  { id: 'tomate', name: 'Tomate', icon: '🍅', damage: 15 },
-  { id: 'platano', name: 'Piel de plátano', icon: '🍌', damage: 15 },
-  { id: 'tarta', name: 'Tarta de nata', icon: '🥧', damage: 20 },
-  { id: 'bomba', name: 'Bomba', icon: '💣', damage: 25 },
-  { id: 'yunque', name: 'Yunque', icon: '⚒️', damage: 30 },
+  { id: 'tomate', name: 'Tomate', icon: '🍅', damage: 15, anim: 'throw' },
+  { id: 'platano', name: 'Piel de plátano', icon: '🍌', damage: 15, anim: 'throw' },
+  { id: 'tarta', name: 'Tarta de nata', icon: '🥧', damage: 20, anim: 'throw' },
+  { id: 'punetazo', name: 'Puñetazo', icon: '🥊', damage: 20, anim: 'punch' },
+  { id: 'pistola_agua', name: 'Pistola de agua', icon: '🔫', damage: 18, anim: 'shoot' },
+  { id: 'petardo', name: 'Petardo', icon: '🧨', damage: 22, anim: 'explode' },
+  { id: 'bomba', name: 'Bomba', icon: '💣', damage: 28, anim: 'explode' },
+  { id: 'yunque', name: 'Yunque', icon: '⚒️', damage: 32, anim: 'drop' },
 ];
 
 export const BATTLE_START_HP = 100;

@@ -5,6 +5,7 @@ import { useLocalBattle } from '../../context/BattleLocalContext';
 import MiiAvatar from '../../components/MiiAvatar';
 import BattlePlayerCard from '../../components/BattlePlayerCard';
 import BattlePodium from '../../components/BattlePodium';
+import BattleAttackFx from '../../components/BattleAttackFx';
 import { computeLocalBattleRanking } from '../../utils/battleRank';
 import { QUIZ_OPTION_STYLES } from '../../constants';
 
@@ -18,6 +19,7 @@ export default function BattleLocalGamePage() {
     attackTargetOptions,
     lastAttack,
     lastAnswerCorrect,
+    revealId,
     eliminationOrder,
     answer,
     attack,
@@ -188,6 +190,18 @@ export default function BattleLocalGamePage() {
             : `❌ ${activePlayer.name} ha fallado, no hace daño esta vez.`}
         </p>
       )}
+
+      <BattleAttackFx
+        revealKey={isReveal ? String(revealId) : null}
+        correct={lastAnswerCorrect}
+        attackerName={attacker?.name}
+        attackerMii={attacker?.mii}
+        targetName={target?.name}
+        targetMii={target?.mii}
+        weapon={attackWeapon ?? null}
+        damage={lastAttack?.damage ?? 0}
+        targetDefeated={lastAttack?.targetDefeated ?? false}
+      />
     </div>
   );
 }

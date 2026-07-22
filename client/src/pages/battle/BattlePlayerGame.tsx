@@ -7,6 +7,7 @@ import { loadSession } from '../../utils/session';
 import Timer from '../../components/Timer';
 import BattlePlayerCard from '../../components/BattlePlayerCard';
 import BattlePodium from '../../components/BattlePodium';
+import BattleAttackFx from '../../components/BattleAttackFx';
 import { fallbackBattleRanking } from '../../utils/battleRank';
 import { QUIZ_OPTION_STYLES } from '../../constants';
 
@@ -203,6 +204,18 @@ export default function BattlePlayerGame() {
               : `❌ ${activePlayer?.name} ha fallado, no hace daño esta vez.`}
         </p>
       )}
+
+      <BattleAttackFx
+        revealKey={isReveal ? String(room.revealEndsAt) : null}
+        correct={room.lastAnswerCorrect}
+        attackerName={attacker?.name}
+        attackerMii={attacker?.mii}
+        targetName={target?.name}
+        targetMii={target?.mii}
+        weapon={attackWeapon ?? null}
+        damage={room.lastAttack?.damage ?? 0}
+        targetDefeated={room.lastAttack?.targetDefeated ?? false}
+      />
     </div>
   );
 }

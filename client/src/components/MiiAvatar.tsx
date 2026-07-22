@@ -47,11 +47,11 @@ function Arms({ outfitStyle, outfitColor, skinTone }: { outfitStyle: MiiConfig['
   const sleeveColor = outfitStyle === 'traje' ? '#1f2937' : outfitColor;
   return (
     <>
-      <g data-limb="arm-left">
+      <g data-limb="arm-left" style={{ transformOrigin: '40px 182px' }}>
         <path d="M40,182 Q18,206 24,238" stroke={sleeveColor} strokeWidth={20} strokeLinecap="round" fill="none" />
         <circle cx={24} cy={241} r={11} fill={skinTone} />
       </g>
-      <g data-limb="arm-right">
+      <g data-limb="arm-right" style={{ transformOrigin: '160px 182px' }}>
         <path d="M160,182 Q182,206 176,238" stroke={sleeveColor} strokeWidth={20} strokeLinecap="round" fill="none" />
         <circle cx={176} cy={241} r={11} fill={skinTone} />
       </g>

@@ -2262,3 +2262,274 @@ button.battle-player-card:active {
   font-weight: 700;
   text-align: center;
 }
+
+/* ---- Animación de ataque (BattleAttackFx): cutscene a pantalla completa ---- */
+
+.battle-fx-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 4, 26, 0.72);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  z-index: 300;
+  padding: 20px;
+  animation: battle-fx-fade-in 0.25s ease;
+}
+
+.battle-fx-flash {
+  animation: battle-fx-fade-in 0.25s ease, battle-fx-flash 0.35s ease;
+}
+
+@keyframes battle-fx-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes battle-fx-flash {
+  0% {
+    background: rgba(10, 4, 26, 0.72);
+  }
+  30% {
+    background: rgba(250, 204, 21, 0.35);
+  }
+  100% {
+    background: rgba(10, 4, 26, 0.72);
+  }
+}
+
+.battle-fx-stage {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 420px;
+  min-height: 190px;
+}
+
+.battle-fx-char {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.5));
+}
+
+.battle-fx-name {
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.4);
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+.fx-windup-throw [data-limb='arm-right'],
+.fx-windup-punch [data-limb='arm-right'] {
+  animation: battle-fx-arm-swing 780ms ease;
+}
+
+.fx-windup-shoot,
+.fx-windup-explode,
+.fx-windup-drop {
+  animation: battle-fx-ready-bounce 700ms ease;
+}
+
+@keyframes battle-fx-arm-swing {
+  0% {
+    transform: rotate(0deg);
+  }
+  35% {
+    transform: rotate(-40deg);
+  }
+  65% {
+    transform: rotate(55deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes battle-fx-ready-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  70% {
+    transform: translateY(2px);
+  }
+}
+
+.fx-hit {
+  animation: battle-fx-shake 500ms ease;
+}
+
+@keyframes battle-fx-shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+  15% {
+    transform: translateX(-10px) rotate(-6deg);
+  }
+  30% {
+    transform: translateX(9px) rotate(5deg);
+  }
+  45% {
+    transform: translateX(-7px) rotate(-4deg);
+  }
+  60% {
+    transform: translateX(6px) rotate(3deg);
+  }
+  75% {
+    transform: translateX(-4px) rotate(-2deg);
+  }
+}
+
+.battle-fx-projectile {
+  position: absolute;
+  top: 45%;
+  left: 20%;
+  font-size: 2.2rem;
+  z-index: 3;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+}
+
+.fx-projectile-arc {
+  animation-name: battle-fx-arc;
+}
+
+.fx-projectile-straight {
+  animation-name: battle-fx-straight;
+}
+
+.fx-projectile-drop {
+  left: 78%;
+  top: -10%;
+  animation-name: battle-fx-drop;
+}
+
+@keyframes battle-fx-arc {
+  0% {
+    left: 20%;
+    top: 50%;
+    transform: scale(0.9) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    top: 8%;
+    transform: scale(1.1) rotate(160deg);
+  }
+  100% {
+    left: 78%;
+    top: 45%;
+    transform: scale(1.1) rotate(320deg);
+    opacity: 1;
+  }
+}
+
+@keyframes battle-fx-straight {
+  0% {
+    left: 20%;
+    top: 48%;
+    opacity: 1;
+    transform: scale(0.9);
+  }
+  100% {
+    left: 78%;
+    top: 48%;
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes battle-fx-drop {
+  0% {
+    top: -10%;
+    opacity: 1;
+    transform: rotate(-8deg);
+  }
+  100% {
+    top: 45%;
+    opacity: 1;
+    transform: rotate(8deg);
+  }
+}
+
+.battle-fx-burst {
+  position: absolute;
+  top: 20%;
+  font-size: 2.6rem;
+  animation: battle-fx-burst-pop 550ms ease forwards;
+  z-index: 4;
+}
+
+.battle-fx-burst-big {
+  font-size: 3.6rem;
+}
+
+@keyframes battle-fx-burst-pop {
+  0% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.battle-fx-damage {
+  position: absolute;
+  top: 0;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--red);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  animation: battle-fx-damage-float 1s ease forwards;
+  z-index: 4;
+}
+
+@keyframes battle-fx-damage-float {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-46px);
+    opacity: 0;
+  }
+}
+
+.battle-fx-caption {
+  max-width: 360px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 14px;
+  padding: 10px 16px;
+  margin: 0;
+}

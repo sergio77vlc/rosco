@@ -2,6 +2,7 @@ import React from 'react';
 import { BATTLE_WEAPONS, type BattleRoomPublic } from '@rosco/shared';
 import Timer from '../../components/Timer';
 import BattlePlayerCard from '../../components/BattlePlayerCard';
+import BattleAttackFx from '../../components/BattleAttackFx';
 import { QUIZ_OPTION_STYLES } from '../../constants';
 
 interface BattleHostGameProps {
@@ -70,6 +71,18 @@ export default function BattleHostGame({ room }: BattleHostGameProps) {
             : `❌ ${activePlayer?.name} ha fallado, no hace daño esta vez.`}
         </p>
       )}
+
+      <BattleAttackFx
+        revealKey={isReveal ? String(room.revealEndsAt) : null}
+        correct={room.lastAnswerCorrect}
+        attackerName={attacker?.name}
+        attackerMii={attacker?.mii}
+        targetName={target?.name}
+        targetMii={target?.mii}
+        weapon={attackWeapon ?? null}
+        damage={room.lastAttack?.damage ?? 0}
+        targetDefeated={room.lastAttack?.targetDefeated ?? false}
+      />
     </div>
   );
 }
