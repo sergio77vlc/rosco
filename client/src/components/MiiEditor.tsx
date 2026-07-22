@@ -1,11 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  MII_EXPRESSIONS,
   MII_HAIR_COLORS,
   MII_HAIR_STYLES,
   MII_OUTFIT_COLORS,
   MII_OUTFIT_STYLES,
+  MII_PANTS_COLORS,
   MII_SKIN_TONES,
   type MiiConfig,
+  type MiiExpression,
 } from '@rosco/shared';
 import MiiAvatar from './MiiAvatar';
 
@@ -18,6 +21,7 @@ const CAPTURE_SIZE = 240;
 
 export default function MiiEditor({ value, onChange }: MiiEditorProps) {
   const [editorOpen, setEditorOpen] = useState(false);
+  const [previewExpression, setPreviewExpression] = useState<MiiExpression>('neutral');
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [videoReady, setVideoReady] = useState(false);
@@ -99,7 +103,26 @@ export default function MiiEditor({ value, onChange }: MiiEditorProps) {
               </button>
             </div>
 
-            <MiiAvatar mii={value} size={120} className="mii-editor-preview" />
+            <MiiAvatar mii={value} expression={previewExpression} size={130} className="mii-editor-preview" />
+
+            <div className="mii-editor-section">
+              <span className="mii-editor-label">Expresión (vista previa)</span>
+              <p className="mii-editor-hint">No se guarda: se usará automáticamente durante la partida.</p>
+              <div className="mii-editor-options">
+                {MII_EXPRESSIONS.map((e) => (
+                  <button
+                    key={e.id}
+                    type="button"
+                    className={`avatar-option ${previewExpression === e.id ? 'avatar-option-active' : ''}`}
+                    onClick={() => setPreviewExpression(e.id)}
+                    aria-label={e.label}
+                    title={e.label}
+                  >
+                    {e.icon}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="mii-editor-section">
               <span className="mii-editor-label">Cara</span>
@@ -185,6 +208,22 @@ export default function MiiEditor({ value, onChange }: MiiEditorProps) {
                     style={{ backgroundColor: c }}
                     onClick={() => patch({ outfitColor: c })}
                     aria-label={`Color de ropa ${c}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="mii-editor-section">
+              <span className="mii-editor-label">Pantalón</span>
+              <div className="mii-editor-swatches">
+                {MII_PANTS_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`mii-swatch ${value.pantsColor === c ? 'mii-swatch-active' : ''}`}
+                    style={{ backgroundColor: c }}
+                    onClick={() => patch({ pantsColor: c })}
+                    aria-label={`Color de pantalón ${c}`}
                   />
                 ))}
               </div>

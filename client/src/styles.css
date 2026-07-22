@@ -868,6 +868,13 @@ button {
   justify-content: center;
 }
 
+.mii-editor-hint {
+  margin: -4px 0 0;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-align: center;
+}
+
 .mii-editor-options {
   display: flex;
   gap: 8px;

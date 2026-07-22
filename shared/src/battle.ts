@@ -8,12 +8,30 @@ import type { QuizDifficulty, QuizQuestionView } from './types.js';
 export type MiiHairStyle = 'corto' | 'largo' | 'moicano' | 'rizado' | 'gorra';
 export type MiiOutfitStyle = 'camiseta' | 'sudadera' | 'vestido' | 'traje';
 
+/**
+ * Expresión facial del Mii: no se guarda en el perfil del jugador (es transitoria), la decide
+ * quien renderiza el personaje en cada momento — pensada para las animaciones de combate
+ * (dolor al recibir daño, ko al perder, sorprendido/feliz al acertar o ganar, etc).
+ */
+export type MiiExpression = 'neutral' | 'feliz' | 'enfadado' | 'sorprendido' | 'dolor' | 'ko';
+
+export const MII_EXPRESSIONS: { id: MiiExpression; label: string; icon: string }[] = [
+  { id: 'neutral', label: 'Neutral', icon: '🙂' },
+  { id: 'feliz', label: 'Feliz', icon: '😄' },
+  { id: 'enfadado', label: 'Enfadado', icon: '😠' },
+  { id: 'sorprendido', label: 'Sorprendido', icon: '😲' },
+  { id: 'dolor', label: 'Dolor', icon: '😖' },
+  { id: 'ko', label: 'K.O.', icon: '😵' },
+];
+
 export interface MiiConfig {
   skinTone: string;
   hairStyle: MiiHairStyle;
   hairColor: string;
   outfitStyle: MiiOutfitStyle;
   outfitColor: string;
+  /** Color del pantalón/piernas, visible ahora que el Mii tiene cuerpo entero. */
+  pantsColor: string;
   /** Foto de la cara del jugador (data URL), o null para usar la cara de dibujo por defecto. */
   photo: string | null;
 }
@@ -26,6 +44,10 @@ export const MII_HAIR_COLORS = [
 
 export const MII_OUTFIT_COLORS = [
   '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899',
+] as const;
+
+export const MII_PANTS_COLORS = [
+  '#1f2937', '#374151', '#1e3a8a', '#334155', '#78350f', '#4b5563', '#f8fafc', '#166534',
 ] as const;
 
 export const MII_HAIR_STYLES: { id: MiiHairStyle; label: string; icon: string }[] = [
@@ -49,6 +71,7 @@ export const DEFAULT_MII_CONFIG: MiiConfig = {
   hairColor: MII_HAIR_COLORS[0],
   outfitStyle: 'camiseta',
   outfitColor: MII_OUTFIT_COLORS[5],
+  pantsColor: MII_PANTS_COLORS[0],
   photo: null,
 };
 

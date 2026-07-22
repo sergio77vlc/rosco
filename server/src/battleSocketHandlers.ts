@@ -60,6 +60,7 @@ function sanitizeMii(input: unknown): MiiConfig {
       ? (mii.outfitStyle as MiiConfig['outfitStyle'])
       : DEFAULT_MII_CONFIG.outfitStyle,
     outfitColor: typeof mii.outfitColor === 'string' ? mii.outfitColor : DEFAULT_MII_CONFIG.outfitColor,
+    pantsColor: typeof mii.pantsColor === 'string' ? mii.pantsColor : DEFAULT_MII_CONFIG.pantsColor,
     photo: typeof mii.photo === 'string' && mii.photo.length <= MAX_PHOTO_LENGTH ? mii.photo : null,
   };
 }
