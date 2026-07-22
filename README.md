@@ -37,12 +37,23 @@ Plataforma web de **juegos educativos multijugador**, pensada para jugar con ami
 
 ### Batalla (`/battle`) — combate por turnos con preguntas y armas
 
-- Cada jugador tiene 100 puntos de vida. Por turnos, responde una pregunta de cultura general o de un paquete guardado/generado con IA (4 opciones, igual que en Quiz); si acierta, elige **a quién atacar** (si hay más de un rival vivo) y **con qué arma** (🍅 tomate, 🍌 piel de plátano, 🥧 tarta de nata, 💣 bomba o ⚒️ yunque, cada una con distinto daño). Si falla o se acaba el tiempo, no pasa nada y el turno pasa al siguiente jugador. Gana el último que queda con vida.
-- **Personaje tipo Mii**: en vez de elegir un avatar de una lista, cada jugador crea su propio personaje desde una burbuja de edición — peinado (5 estilos), color de pelo, tipo de ropa (camiseta, sudadera, vestido o traje) y su color, todo dibujado en SVG. También se puede **poner la propia foto en la cara del personaje** con la cámara del móvil (o dejar la cara de dibujo por defecto).
+- Cada jugador tiene 100 puntos de vida. Por turnos, responde una pregunta de cultura general o de un paquete guardado/generado con IA (4 opciones, igual que en Quiz); si acierta, elige **a quién atacar** (si hay más de un rival vivo) y **con qué arma** — 🍅 tomate, 🍌 piel de plátano, 🥧 tarta de nata, 🥊 puñetazo, 🔫 pistola de agua, 🧨 petardo, 💣 bomba o ⚒️ yunque, cada una con distinto daño y su propia animación (lanzamiento, disparo, golpe, explosión o caída). Si falla o se acaba el tiempo, no pasa nada y el turno pasa al siguiente jugador. Gana el último que queda con vida.
+- **Animación de cada ataque, igual en todos los dispositivos**: al acertar y atacar, una escena a pantalla completa muestra al atacante y al objetivo (con su Mii de cuerpo entero) y el arma viajando entre ambos; el objetivo reacciona con una expresión de dolor (o K.O. si queda eliminado) mientras una frase graciosa se narra por voz (TTS) y se muestra en pantalla — se dispara igual en el dashboard del anfitrión y en el móvil de cada jugador, a partir del mismo estado de sala.
+- **Personaje tipo Mii de cuerpo entero**: en vez de elegir un avatar de una lista, cada jugador crea su propio personaje desde una burbuja de edición — peinado (5 estilos), color de pelo, tipo de ropa y su color, color de pantalón, y una cara con 6 expresiones (neutral, feliz, enfadado, sorprendido, dolor, K.O.) que se usan durante las animaciones de combate. También se puede **poner la propia foto en la cara del personaje** con la cámara del móvil (o dejar la cara de dibujo por defecto).
 - Menú igual que el de Pasapalabra: **hospedar partida**, **unirse escaneando un QR**, o **jugar en el mismo dispositivo** (modo local, sin red) — con **mínimo 2 jugadores en todos los modos**.
 - Configuración del anfitrión: nº máximo de jugadores (2-6) y dificultad de las preguntas. Mismo interruptor **"Usar dispositivo en modo TV"** que en los otros juegos (por defecto desactivado: el anfitrión es un jugador más).
-- El dashboard del anfitrión y la pantalla de cada jugador muestran en todo momento la vida de todos los combatientes (con avatar Mii y barra de vida), quién tiene el turno, la pregunta activa y, tras cada revelado, el resultado del ataque ("🍅 Ana atacó a Luis con tomate: -15 HP").
+- El dashboard del anfitrión y la pantalla de cada jugador muestran en todo momento la vida de todos los combatientes (con avatar Mii y barra de vida) y quién tiene el turno.
 - Al terminar, podio con el ganador y el resto de jugadores en el orden en que fueron cayendo.
+
+### Crucigramas (`/crossword`) — un tablero compartido, sin turnos
+
+- Todos los dispositivos resuelven **el mismo crucigrama a la vez, sincronizado en tiempo real**: no hay turnos, cualquier jugador puede intentar cualquier palabra en cualquier momento. Cada palabra acertada suma puntos (proporcionales a su longitud) a quien la resolvió, y sus letras se revelan al instante en el tablero de todos. **Sin límite de tiempo**: la partida termina cuando se completan todas las palabras.
+- Al tocar una palabra (en la rejilla o en la lista de pistas Horizontales/Verticales) se abre su definición y un campo para responder. **Resaltado de presencia en tiempo real**: la palabra que cada jugador tiene abierta se marca con un color distinto en el tablero de todos los demás, para ver al instante en qué está pensando cada uno.
+- **Narración por voz al acertar**: cuando alguien resuelve una palabra, todos los dispositivos narran por TTS una frase que felicita al jugador y anuncia la palabra y los puntos ganados (p. ej. "¡Muy bien, Ana! ELEGIR, 60 puntos"), a la vez que se muestra en pantalla.
+- Incluye 4 crucigramas de ejemplo listos para jugar (2 de dificultad normal, 2 difícil), con 9-11 palabras cada uno.
+- Modo **"Jugar en este dispositivo"** para resolver en solitario, con la misma mecánica (sin red, sin límite de tiempo, narración incluida).
+- Menú igual que los demás juegos: **hospedar partida** (hasta 8 jugadores a la vez, ya que no hay turnos que repartir), **unirse escaneando un QR**, o **jugar en este dispositivo**.
+- Al completarse el crucigrama, podio final por puntos y palabras resueltas.
 
 ## Arquitectura
 
@@ -273,6 +284,23 @@ client/src/components/BattlePodium.tsx     Podio final de Batalla (reutiliza los
 client/src/context/BattleContext.tsx       Estado de red de Batalla (sala, ranking final, jugador), vía Socket.IO
 client/src/context/BattleLocalContext.tsx  Estado del modo local de Batalla (turnos, vida, ataques), sin red
 client/src/pages/battle/*                  Páginas de Batalla: inicio, anfitrión (config/lobby/combate/resultados), unirse y modo local
+client/src/components/BattleAttackFx.tsx   Cutscene a pantalla completa del ataque: trayectoria del arma, expresión de dolor/K.O., narración TTS
+client/src/utils/battleNarration.ts        Frases graciosas por arma para narrar cada ataque (y las fallidas)
+
+shared/src/crossword.ts          Tipos de Crucigramas: puzzle con respuestas (servidor), vistas públicas sin respuestas, eventos de Socket.IO
+server/src/crossword/presets.ts  4 crucigramas de ejemplo escritos a mano en forma de "peine" (una palabra horizontal + varias verticales que cuelgan de sus letras)
+server/src/crossword/grid.ts     Deriva la rejilla (bloqueada/número/letra) a partir de las palabras; valida que los cruces de letras coincidan al arrancar el servidor
+server/src/crossword/engine.ts   submitAnswer() (sin turnos: cualquiera puede intentar cualquier palabra), puntuación por longitud, ranking, estado público de la sala
+server/src/crossword/rooms.ts    Estado de las salas de crucigrama en memoria
+server/src/crosswordSocketHandlers.ts Eventos de Socket.IO: crear/unirse, foco sobre una pista (presencia en tiempo real), enviar respuesta
+client/src/components/CrosswordBoard.tsx      Tablero compartido (rejilla + panel de pista + marcador), reutilizado por el anfitrión, cada jugador y el modo local; dispara la narración TTS al resolverse una palabra
+client/src/components/CrosswordGrid.tsx       Rejilla responsive: números, letras reveladas, celda seleccionada y resaltado de la palabra que otro jugador tiene abierta (un color por jugador)
+client/src/components/CrosswordCluePanel.tsx  Definición de la pista seleccionada + respuesta, y las listas de pistas Horizontales/Verticales con marca de resueltas
+client/src/utils/crosswordGrid.ts             Helpers puros: qué pista(s) ocupan una celda, alternar horizontal/vertical al tocar un cruce dos veces
+client/src/utils/crosswordNarration.ts        Frases para narrar por voz quién ha resuelto cada palabra
+client/src/context/CrosswordContext.tsx       Estado de red del crucigrama (sala, ranking final, jugador), vía Socket.IO
+client/src/context/CrosswordLocalContext.tsx  Estado del modo local (un jugador, sin red): valida las respuestas en el propio dispositivo
+client/src/pages/crossword/*                  Páginas de Crucigramas: inicio, anfitrión (config/lobby/tablero TV/resultados), unirse y modo local
 ```
 
 ## Notas y limitaciones conocidas

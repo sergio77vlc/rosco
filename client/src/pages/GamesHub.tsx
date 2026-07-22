@@ -35,6 +35,14 @@ const GAMES: GameEntry[] = [
     path: '/battle',
     githubUrl: 'https://github.com/sergio77vlc/socialquizz',
   },
+  {
+    id: 'crossword',
+    name: 'Crucigramas',
+    icon: '🧩',
+    description: 'Un mismo crucigrama para todos a la vez, sin turnos ni límite de tiempo: cada palabra resuelta suma puntos.',
+    path: '/crossword',
+    githubUrl: 'https://github.com/sergio77vlc/socialquizz',
+  },
 ];
 
 export default function GamesHub() {

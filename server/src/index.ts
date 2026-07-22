@@ -16,6 +16,8 @@ import { roscoPackRepo, quizPackRepo, battlePackRepo } from './packs/repositorie
 import { registerSocketHandlers } from './socketHandlers.js';
 import { registerQuizSocketHandlers } from './quizSocketHandlers.js';
 import { registerBattleSocketHandlers } from './battleSocketHandlers.js';
+import { registerCrosswordSocketHandlers } from './crosswordSocketHandlers.js';
+import { listCrosswordSummaries, getCrosswordPuzzle } from './crossword/pool.js';
 
 const VALID_DIFFICULTIES: Difficulty[] = ['medio', 'dificil'];
 const MAX_DRAW_COUNT = 6;
@@ -148,6 +150,21 @@ app.post('/api/packs/:domain/generate', async (req, res) => {
   }
 });
 
+app.get('/api/crossword/puzzles', (_req, res) => {
+  res.json({ puzzles: listCrosswordSummaries() });
+});
+
+// Solo para el modo local (un jugador en este dispositivo): incluye las respuestas, ya que
+// no hay servidor de por medio validando cada palabra. En partidas en red nunca se exponen.
+app.get('/api/crossword/puzzles/:id', (req, res) => {
+  const puzzle = getCrosswordPuzzle(req.params.id);
+  if (!puzzle) {
+    res.status(404).json({ error: 'Crucigrama no encontrado.' });
+    return;
+  }
+  res.json({ puzzle });
+});
+
 if (hasClientBuild) {
   app.use(express.static(clientDist));
   app.get('*', (_req, res) => {
@@ -168,6 +185,7 @@ io.on('connection', (socket) => {
   registerSocketHandlers(io, socket);
   registerQuizSocketHandlers(io, socket);
   registerBattleSocketHandlers(io, socket);
+  registerCrosswordSocketHandlers(io, socket);
 });
 
 httpServer.listen(PORT, HOST, () => {

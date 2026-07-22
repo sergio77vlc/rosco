@@ -6,3 +6,4 @@ export * from './roscoAssignment.js';
 export * from './quizScoring.js';
 export * from './battle.js';
 export * from './packs.js';
+export * from './crossword.js';
