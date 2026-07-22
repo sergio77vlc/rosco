@@ -11,11 +11,19 @@ export default function QuizHome() {
       <h1 className="app-title">🧠 Quiz de Cultura General</h1>
       <p className="app-subtitle">Responde más rápido que nadie, estilo Kahoot. Multijugador con tus amigos y sus móviles.</p>
       <div className="home-actions">
-        <button className="btn btn-primary btn-big" onClick={() => navigate('/quiz/host')}>
-          Hospedar partida
+        <button type="button" className="action-card action-card-host" onClick={() => navigate('/quiz/host')}>
+          <span className="action-card-icon">🎬</span>
+          <span className="action-card-text">
+            <span className="action-card-title">Hospedar partida</span>
+            <span className="action-card-hint">Crea una sala y compártela con un código QR</span>
+          </span>
         </button>
-        <button className="btn btn-secondary btn-big" onClick={() => navigate('/quiz/join')}>
-          Unirse a una partida
+        <button type="button" className="action-card action-card-join" onClick={() => navigate('/quiz/join')}>
+          <span className="action-card-icon">📲</span>
+          <span className="action-card-text">
+            <span className="action-card-title">Unirse a una partida</span>
+            <span className="action-card-hint">Escanea el QR o introduce el código de la sala</span>
+          </span>
         </button>
       </div>
     </div>

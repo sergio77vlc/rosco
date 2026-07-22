@@ -137,7 +137,95 @@ button {
   gap: 14px;
   margin-top: 24px;
   width: 100%;
-  max-width: 340px;
+  max-width: 380px;
+}
+
+.action-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(139, 92, 246, 0.16), var(--card));
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  color: var(--text);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.action-card:hover,
+.action-card:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.35);
+}
+
+.action-card:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+.action-card-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.action-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.action-card-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.action-card-hint {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.action-card-host {
+  border-color: rgba(250, 204, 21, 0.45);
+}
+
+.action-card-host .action-card-icon {
+  background: rgba(250, 204, 21, 0.18);
+}
+
+.action-card-host:hover {
+  border-color: var(--accent);
+}
+
+.action-card-join {
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.action-card-join:hover {
+  border-color: var(--accent-2);
+}
+
+.action-card-local {
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.action-card-local .action-card-icon {
+  background: rgba(34, 197, 94, 0.18);
+}
+
+.action-card-local:hover {
+  border-color: var(--green);
 }
 
 .back-to-hub-link {
