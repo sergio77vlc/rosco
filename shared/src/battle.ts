@@ -125,6 +125,8 @@ export interface BattleRankingEntry {
 export interface BattleHostCreateRoomPayload {
   maxPlayers: number;
   difficulty: QuizDifficulty;
+  /** Si se indica, las preguntas salen de este paquete guardado en el servidor en vez de la pila viva. */
+  packId?: string;
 }
 
 export interface BattlePlayerJoinRoomPayload {

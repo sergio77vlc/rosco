@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import type { Server, Socket } from 'socket.io';
-import { DEFAULT_AVATAR, ROSCO_ALPHABET, answerMatchesLetterRule, nextActivePlayerId } from '@rosco/shared';
+import { DEFAULT_AVATAR, nextActivePlayerId } from '@rosco/shared';
 import type {
   Difficulty,
   HostCreateRoomPayload,
@@ -10,6 +10,7 @@ import type {
   PlayerReconnectPayload,
   PlayerSubmitAnswerPayload,
   Rosco,
+  RoscoPack,
 } from '@rosco/shared';
 import {
   createRoomCode,
@@ -21,6 +22,7 @@ import {
 } from './rooms.js';
 import { computeRanking, createPlayer, passLetter, reconnectPlayer, submitAnswer, toPublicRoom } from './gameEngine.js';
 import { drawRoscos } from './roscos/pool.js';
+import { roscoPackRepo } from './packs/repositories.js';
 import type { ServerPlayer, ServerRoom } from './roomTypes.js';
 
 const MIN_PLAYERS = 2;
@@ -33,23 +35,10 @@ const MAX_AVATAR_LENGTH = 300_000;
 // (recarga de página, corte de red breve) antes de darla por cerrada.
 const HOST_RECONNECT_GRACE_MS = 45_000;
 
-function validateRosco(rosco: Rosco): string | null {
-  if (!rosco || !Array.isArray(rosco.letters) || rosco.letters.length !== ROSCO_ALPHABET.length) {
-    return 'El rosco debe tener 25 letras.';
-  }
-  for (let i = 0; i < ROSCO_ALPHABET.length; i++) {
-    const entry = rosco.letters[i];
-    if (!entry || entry.letter !== ROSCO_ALPHABET[i]) {
-      return `Letra inesperada en la posición ${i + 1}.`;
-    }
-    if (!entry.clue?.trim() || !entry.answer?.trim()) {
-      return `Falta la pista o la respuesta de la letra ${entry.letter}.`;
-    }
-    if (!answerMatchesLetterRule(entry.answer, entry.letter, entry.matchType)) {
-      return `La respuesta de la letra ${entry.letter} no cumple la regla (${entry.matchType}).`;
-    }
-  }
-  return null;
+/** Extrae `count` roscos del paquete guardado, barajados y repitiendo si el paquete tiene menos. */
+function drawFromRoscoPack(pack: RoscoPack, count: number): Rosco[] {
+  const shuffled = [...pack.roscos].sort(() => Math.random() - 0.5);
+  return Array.from({ length: count }, (_, i) => shuffled[i % shuffled.length]);
 }
 
 function sortedPlayers(room: ServerRoom): ServerPlayer[] {
@@ -115,16 +104,15 @@ export function registerSocketHandlers(io: Server, socket: Socket): void {
       let roscoPool: Rosco[];
       let roscoTheme: string;
       let roscoDifficulty: Difficulty;
-      if (selection?.mode === 'ai') {
-        const roscoError = validateRosco(selection.rosco);
-        if (roscoError) {
-          ack?.({ ok: false, reason: roscoError });
+      if (selection?.mode === 'pack') {
+        const pack = roscoPackRepo.get(selection.packId);
+        if (!pack) {
+          ack?.({ ok: false, reason: 'El paquete de roscos ya no existe.' });
           return;
         }
-        // Un rosco de IA es único (no hay pila de la que extraer variantes): se reparte el mismo a todos.
-        roscoPool = Array.from({ length: maxPlayers }, () => selection.rosco);
-        roscoTheme = selection.rosco.theme;
-        roscoDifficulty = selection.rosco.difficulty;
+        roscoPool = drawFromRoscoPack(pack, maxPlayers);
+        roscoTheme = pack.name;
+        roscoDifficulty = pack.difficulty;
       } else if (selection?.mode === 'preset') {
         // Cada jugador recibe un rosco distinto extraído de la pila viva de esa dificultad.
         roscoPool = drawRoscos(selection.difficulty, maxPlayers);

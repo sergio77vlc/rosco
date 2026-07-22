@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DEFAULT_MII_CONFIG, type MiiConfig, type QuizDifficulty } from '@rosco/shared';
+import { DEFAULT_MII_CONFIG, type MiiConfig, type PackSummary, type QuizDifficulty } from '@rosco/shared';
 import { useBattle } from '../../context/BattleContext';
 import MiiEditor from '../../components/MiiEditor';
+import ContentPackPicker from '../../components/ContentPackPicker';
 import { QUIZ_DIFFICULTY_ICONS, QUIZ_DIFFICULTY_LABELS } from '../../constants';
 import { saveSession } from '../../utils/session';
 
@@ -19,6 +20,8 @@ export default function BattleHostSetup() {
   const [tvMode, setTvMode] = useState(false);
   const [hostName, setHostName] = useState('');
   const [hostMii, setHostMii] = useState<MiiConfig>(DEFAULT_MII_CONFIG);
+  const [packPickerOpen, setPackPickerOpen] = useState(false);
+  const [selectedPack, setSelectedPack] = useState<PackSummary | null>(null);
 
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -30,6 +33,7 @@ export default function BattleHostSetup() {
       const res = await emitWithAck<{ ok: true; code: string; hostToken: string }>('battle:hostCreateRoom', {
         maxPlayers,
         difficulty,
+        packId: selectedPack?.id,
       });
       saveSession('battle', res.code, { hostToken: res.hostToken });
       if (!tvMode) {
@@ -103,18 +107,40 @@ export default function BattleHostSetup() {
       </section>
 
       <section className="setup-section">
-        <h2>Dificultad de las preguntas</h2>
+        <h2>Preguntas</h2>
+        <p className="preset-picker-hint">Modo rápido: elige la dificultad de cultura general.</p>
         <div className="pill-row">
           {DIFFICULTY_OPTIONS.map((d) => (
             <button
               key={d}
-              className={`pill ${difficulty === d ? 'pill-active' : ''}`}
-              onClick={() => setDifficulty(d)}
+              className={`pill ${!selectedPack && difficulty === d ? 'pill-active' : ''}`}
+              onClick={() => {
+                setDifficulty(d);
+                setSelectedPack(null);
+              }}
             >
               {QUIZ_DIFFICULTY_ICONS[d]} {QUIZ_DIFFICULTY_LABELS[d]}
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          className="btn btn-secondary pack-picker-open-btn"
+          onClick={() => setPackPickerOpen(true)}
+        >
+          📦 Elegir o crear un paquete guardado con IA
+        </button>
+        {selectedPack && (
+          <p className="setup-selected pack-selected">
+            🎯 Paquete seleccionado: <strong>{selectedPack.name}</strong> ({selectedPack.count} preguntas)
+          </p>
+        )}
+        <ContentPackPicker
+          domain="battle"
+          open={packPickerOpen}
+          onClose={() => setPackPickerOpen(false)}
+          onSelect={setSelectedPack}
+        />
       </section>
 
       {createError && <p className="error-text">{createError}</p>}

@@ -140,6 +140,15 @@ button {
   max-width: 380px;
 }
 
+.home-content-count {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  padding: 6px 14px;
+  margin: 0;
+}
+
 .action-card {
   display: flex;
   align-items: center;
@@ -924,6 +933,81 @@ button {
 
 .camera-actions .btn {
   flex: 1;
+}
+
+.pack-modal {
+  max-width: 420px;
+}
+
+.pack-picker-open-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.pack-selected {
+  margin-top: 10px;
+}
+
+.pack-search-input {
+  width: 100%;
+}
+
+.pack-hint {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.pack-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.pack-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.pack-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pack-item-info strong {
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pack-item-meta {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.pack-generate {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pack-generate h4 {
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 .local-player-card {

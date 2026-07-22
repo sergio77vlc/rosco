@@ -1,8 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePackContentCount } from '../../hooks/usePackContentCount';
 
 export default function BattleHome() {
   const navigate = useNavigate();
+  const { itemCount, packCount } = usePackContentCount('battle');
   return (
     <div className="screen screen-center">
       <button className="back-to-hub-link" onClick={() => navigate('/')}>
@@ -13,6 +15,11 @@ export default function BattleHome() {
         Crea tu personaje y responde preguntas de cultura general para atacar a tus rivales. ¡El
         último en pie gana!
       </p>
+      {packCount > 0 && (
+        <p className="home-content-count">
+          📦 {itemCount} preguntas guardadas en {packCount} {packCount === 1 ? 'paquete' : 'paquetes'} creados con IA
+        </p>
+      )}
       <div className="home-actions">
         <button type="button" className="action-card action-card-host" onClick={() => navigate('/battle/host')}>
           <span className="action-card-icon">🎬</span>

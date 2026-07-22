@@ -19,6 +19,8 @@ import {
 } from './quiz/rooms.js';
 import { computeQuizRanking, createQuizPlayer, resolveCurrentQuestion, toPublicQuizRoom } from './quiz/engine.js';
 import { drawQuizQuestions } from './quiz/pool.js';
+import { quizPackRepo } from './packs/repositories.js';
+import type { QuizQuestion } from '@rosco/shared';
 import type { ServerQuizPlayer, ServerQuizRoom } from './quiz/roomTypes.js';
 
 const MIN_PLAYERS = 2;
@@ -33,6 +35,12 @@ const MAX_AVATAR_LENGTH = 300_000;
 // Tiempo que se mantiene viva la sala tras desconectarse el anfitrión, por si vuelve
 // (recarga de página, corte de red breve) antes de darla por cerrada.
 const HOST_RECONNECT_GRACE_MS = 45_000;
+
+/** Extrae `count` preguntas del paquete guardado, barajadas y repitiendo si el paquete tiene menos. */
+function drawFromQuizPack(questions: QuizQuestion[], count: number): QuizQuestion[] {
+  const shuffled = [...questions].sort(() => Math.random() - 0.5);
+  return Array.from({ length: count }, (_, i) => shuffled[i % shuffled.length]);
+}
 
 function broadcastQuizRoomState(io: Server, room: ServerQuizRoom): void {
   io.to(room.code).emit('quiz:roomState', toPublicQuizRoom(room));
@@ -117,7 +125,17 @@ export function registerQuizSocketHandlers(io: Server, socket: Socket): void {
         MAX_DURATION_SECONDS,
         Math.max(MIN_DURATION_SECONDS, Math.floor(payload.questionDurationSeconds)),
       );
-      const questions = drawQuizQuestions(payload.difficulty, questionCount);
+      let questions: QuizQuestion[];
+      if (payload.packId) {
+        const pack = quizPackRepo.get(payload.packId);
+        if (!pack) {
+          ack?.({ ok: false, reason: 'El paquete de preguntas ya no existe.' });
+          return;
+        }
+        questions = drawFromQuizPack(pack.questions, questionCount);
+      } else {
+        questions = drawQuizQuestions(payload.difficulty, questionCount);
+      }
       if (questions.length === 0) {
         ack?.({ ok: false, reason: 'No hay preguntas disponibles para esa dificultad.' });
         return;

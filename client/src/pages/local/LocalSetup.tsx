@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DEFAULT_PLAYER_COLOR, PLAYER_AVATARS, type Rosco, type RoscoSelection } from '@rosco/shared';
+import { DEFAULT_PLAYER_COLOR, PLAYER_AVATARS, type Rosco, type RoscoPack, type RoscoSelection } from '@rosco/shared';
 import RoscoPicker from '../../components/RoscoPicker';
 import AvatarPicker from '../../components/AvatarPicker';
 import AvatarView from '../../components/AvatarView';
@@ -57,8 +57,13 @@ export default function LocalSetup() {
     setStarting(true);
     try {
       let roscoPool: Rosco[];
-      if (selectedRosco.mode === 'ai') {
-        roscoPool = [selectedRosco.rosco];
+      if (selectedRosco.mode === 'pack') {
+        const res = await fetch(`/api/packs/rosco/${selectedRosco.packId}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'No se pudo cargar el paquete de roscos.');
+        const pack: RoscoPack = data.pack;
+        const shuffled = [...pack.roscos].sort(() => Math.random() - 0.5);
+        roscoPool = Array.from({ length: playerCount }, (_, i) => shuffled[i % shuffled.length]);
       } else {
         const res = await fetch('/api/rosco/draw', {
           method: 'POST',

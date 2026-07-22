@@ -75,12 +75,13 @@ export interface TurnAwarePlayer {
 
 /**
  * Cómo se elige el rosco al configurar una partida: o bien un nivel de dificultad del banco
- * de preguntas vivo (el servidor reparte roscos distintos extraídos de la pila), o bien un
- * rosco ya generado por IA (se reparte el mismo entre todos los jugadores).
+ * de preguntas vivo de cultura general (el servidor reparte roscos distintos extraídos de la
+ * pila), o bien un paquete de roscos ya creado con IA y guardado en el servidor (se reparte un
+ * rosco distinto del paquete a cada jugador, igual que con la pila viva).
  */
 export type RoscoSelection =
   | { mode: 'preset'; theme: string; difficulty: Difficulty }
-  | { mode: 'ai'; rosco: Rosco };
+  | { mode: 'pack'; packId: string };
 
 // ---- Socket.IO event payloads ----
 
@@ -210,6 +211,8 @@ export interface QuizHostCreateRoomPayload {
   difficulty: QuizDifficulty;
   questionCount: number;
   questionDurationSeconds: number;
+  /** Si se indica, las preguntas salen de este paquete guardado en el servidor en vez de la pila viva. */
+  packId?: string;
 }
 
 export interface QuizPlayerJoinRoomPayload {

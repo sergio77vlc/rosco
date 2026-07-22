@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DEFAULT_AVATAR, DEFAULT_PLAYER_COLOR, type QuizDifficulty } from '@rosco/shared';
+import { DEFAULT_AVATAR, DEFAULT_PLAYER_COLOR, type PackSummary, type QuizDifficulty } from '@rosco/shared';
 import { useQuiz } from '../../context/QuizContext';
 import AvatarPicker from '../../components/AvatarPicker';
+import ContentPackPicker from '../../components/ContentPackPicker';
 import { QUIZ_DIFFICULTY_ICONS, QUIZ_DIFFICULTY_LABELS, QUIZ_DURATION_OPTIONS } from '../../constants';
 import { saveSession } from '../../utils/session';
 
@@ -23,6 +24,8 @@ export default function QuizHostSetup() {
   const [tvMode, setTvMode] = useState(false);
   const [hostName, setHostName] = useState('');
   const [hostAvatar, setHostAvatar] = useState<string>(DEFAULT_AVATAR);
+  const [packPickerOpen, setPackPickerOpen] = useState(false);
+  const [selectedPack, setSelectedPack] = useState<PackSummary | null>(null);
 
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -36,6 +39,7 @@ export default function QuizHostSetup() {
         difficulty,
         questionCount,
         questionDurationSeconds,
+        packId: selectedPack?.id,
       });
       saveSession('quiz', res.code, { hostToken: res.hostToken });
       if (!tvMode) {
@@ -116,18 +120,40 @@ export default function QuizHostSetup() {
       </section>
 
       <section className="setup-section">
-        <h2>Dificultad</h2>
+        <h2>Preguntas</h2>
+        <p className="preset-picker-hint">Modo rápido: elige la dificultad de cultura general.</p>
         <div className="pill-row">
           {DIFFICULTY_OPTIONS.map((d) => (
             <button
               key={d}
-              className={`pill ${difficulty === d ? 'pill-active' : ''}`}
-              onClick={() => setDifficulty(d)}
+              className={`pill ${!selectedPack && difficulty === d ? 'pill-active' : ''}`}
+              onClick={() => {
+                setDifficulty(d);
+                setSelectedPack(null);
+              }}
             >
               {QUIZ_DIFFICULTY_ICONS[d]} {QUIZ_DIFFICULTY_LABELS[d]}
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          className="btn btn-secondary pack-picker-open-btn"
+          onClick={() => setPackPickerOpen(true)}
+        >
+          📦 Elegir o crear un paquete guardado con IA
+        </button>
+        {selectedPack && (
+          <p className="setup-selected pack-selected">
+            🎯 Paquete seleccionado: <strong>{selectedPack.name}</strong> ({selectedPack.count} preguntas)
+          </p>
+        )}
+        <ContentPackPicker
+          domain="quiz"
+          open={packPickerOpen}
+          onClose={() => setPackPickerOpen(false)}
+          onSelect={setSelectedPack}
+        />
       </section>
 
       <section className="setup-section">

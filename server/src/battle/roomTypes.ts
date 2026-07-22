@@ -19,6 +19,10 @@ export interface ServerBattleRoom {
   status: BattleRoomStatus;
   maxPlayers: number;
   difficulty: QuizDifficulty;
+  /** Si la partida usa un paquete de preguntas guardado, sus preguntas fijas (en vez de la pila viva). */
+  packQuestions: QuizQuestion[] | null;
+  /** Cola de índices barajados sin repetir sobre `packQuestions`, se rebaraja al agotarse. */
+  packDrawQueue: number[];
   players: Map<string, ServerBattlePlayer>;
   turnOrder: string[];
   eliminationOrder: string[];

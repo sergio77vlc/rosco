@@ -140,3 +140,32 @@ export async function generateRoscoWithAI(theme: string, difficulty: Difficulty)
     source: 'ai',
   };
 }
+
+/**
+ * Genera un paquete de varios roscos distintos sobre el mismo tema, para poder repartir uno
+ * diferente a cada jugador (igual que con la pila viva de cultura general). Como cada rosco es
+ * una llamada independiente a la IA, algunas pueden fallar el formato; con que se consigan al
+ * menos 2 (el mínimo de jugadores de una partida) el paquete se considera válido.
+ */
+export async function generateRoscoPack(theme: string, difficulty: Difficulty, count: number): Promise<Rosco[]> {
+  const cleanTheme = theme.trim().slice(0, 120);
+  if (!cleanTheme) {
+    throw new RoscoGenerationError('Indica un tema para generar el paquete.');
+  }
+  const results = await Promise.allSettled(
+    Array.from({ length: count }, () => generateRoscoWithAI(cleanTheme, difficulty)),
+  );
+  const roscos = results
+    .filter((r): r is PromiseFulfilledResult<Rosco> => r.status === 'fulfilled')
+    .map((r) => r.value);
+  if (roscos.length < 2) {
+    const firstError = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
+    const reason = firstError?.reason instanceof Error ? firstError.reason.message : null;
+    throw new RoscoGenerationError(
+      reason && roscos.length === 0
+        ? reason
+        : 'No se pudieron generar suficientes roscos para el paquete. Inténtalo de nuevo.',
+    );
+  }
+  return roscos;
+}

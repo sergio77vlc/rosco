@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import type { Difficulty, RoscoSelection } from '@rosco/shared';
+import type { Difficulty, PackSummary, RoscoSelection } from '@rosco/shared';
 import { DIFFICULTY_ICONS, DIFFICULTY_LABELS, categoryInfo } from '../constants';
+import ContentPackPicker from './ContentPackPicker';
 
 const ROSCO_THEME = 'cultura general';
 
@@ -10,34 +11,16 @@ interface RoscoPickerProps {
 }
 
 export default function RoscoPicker({ value, onChange }: RoscoPickerProps) {
-  const [tab, setTab] = useState<'preset' | 'ai'>('preset');
-
-  const [aiTheme, setAiTheme] = useState('');
-  const [aiDifficulty, setAiDifficulty] = useState<Difficulty>('medio');
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [selectedPack, setSelectedPack] = useState<PackSummary | null>(null);
 
   function choosePresetDifficulty(difficulty: Difficulty) {
     onChange({ mode: 'preset', theme: ROSCO_THEME, difficulty });
   }
 
-  async function handleGenerateAi() {
-    setAiLoading(true);
-    setAiError(null);
-    try {
-      const res = await fetch('/api/rosco/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ theme: aiTheme, difficulty: aiDifficulty }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo generar el rosco.');
-      onChange({ mode: 'ai', rosco: data.rosco });
-    } catch (err) {
-      setAiError(err instanceof Error ? err.message : 'Error generando el rosco.');
-    } finally {
-      setAiLoading(false);
-    }
+  function choosePack(pack: PackSummary) {
+    setSelectedPack(pack);
+    onChange({ mode: 'pack', packId: pack.id });
   }
 
   const themeInfo = categoryInfo(ROSCO_THEME);
@@ -45,75 +28,41 @@ export default function RoscoPicker({ value, onChange }: RoscoPickerProps) {
   return (
     <section className="setup-section">
       <h2>Rosco</h2>
-      <div className="tab-row">
-        <button className={`tab ${tab === 'preset' ? 'tab-active' : ''}`} onClick={() => setTab('preset')}>
-          🎯 Predefinido
-        </button>
-        <button className={`tab ${tab === 'ai' ? 'tab-active' : ''}`} onClick={() => setTab('ai')}>
-          ✨ Generar con IA
-        </button>
+
+      <div className="preset-picker">
+        <h3 className="category-heading">
+          {themeInfo.icon} {themeInfo.label}
+        </h3>
+        <p className="preset-picker-hint">Modo rápido: elige la dificultad, el rosco se asigna automáticamente.</p>
+        <div className="pill-row">
+          {(['medio', 'dificil'] as const).map((d) => (
+            <button
+              key={d}
+              className={`pill ${value?.mode === 'preset' && value.difficulty === d ? 'pill-active' : ''}`}
+              onClick={() => choosePresetDifficulty(d)}
+            >
+              {DIFFICULTY_ICONS[d]} {DIFFICULTY_LABELS[d]}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {tab === 'preset' && (
-        <div className="preset-picker">
-          <h3 className="category-heading">
-            {themeInfo.icon} {themeInfo.label}
-          </h3>
-          <p className="preset-picker-hint">Elige la dificultad, el rosco se asigna automáticamente.</p>
-          <div className="pill-row">
-            {(['medio', 'dificil'] as const).map((d) => (
-              <button
-                key={d}
-                className={`pill ${value?.mode === 'preset' && value.difficulty === d ? 'pill-active' : ''}`}
-                onClick={() => choosePresetDifficulty(d)}
-              >
-                {DIFFICULTY_ICONS[d]} {DIFFICULTY_LABELS[d]}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {tab === 'ai' && (
-        <div className="ai-picker">
-          <label>
-            Tema del rosco
-            <input
-              type="text"
-              placeholder="Ej: Star Wars, la Antigua Roma, videojuegos..."
-              value={aiTheme}
-              onChange={(e) => setAiTheme(e.target.value)}
-              maxLength={120}
-            />
-          </label>
-          <label>
-            Dificultad
-            <select value={aiDifficulty} onChange={(e) => setAiDifficulty(e.target.value as Difficulty)}>
-              {(['medio', 'dificil'] as const).map((d) => (
-                <option key={d} value={d}>
-                  {DIFFICULTY_ICONS[d]} {DIFFICULTY_LABELS[d]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button className="btn btn-secondary" onClick={handleGenerateAi} disabled={aiLoading || !aiTheme.trim()}>
-            {aiLoading ? '✨ Generando...' : '✨ Generar rosco'}
-          </button>
-          {aiError && <p className="error-text">{aiError}</p>}
-          {value?.mode === 'ai' && <p className="success-text">Rosco generado: "{value.rosco.title}" ✅</p>}
-        </div>
-      )}
+      <button type="button" className="btn btn-secondary pack-picker-open-btn" onClick={() => setPickerOpen(true)}>
+        📦 Elegir o crear un rosco guardado con IA
+      </button>
 
       {value?.mode === 'preset' && (
         <p className="setup-selected">
           🎯 {themeInfo.icon} {themeInfo.label} · {DIFFICULTY_ICONS[value.difficulty]} {DIFFICULTY_LABELS[value.difficulty]}
         </p>
       )}
-      {value?.mode === 'ai' && (
+      {value?.mode === 'pack' && selectedPack && (
         <p className="setup-selected">
-          🎯 Rosco seleccionado: <strong>{value.rosco.title}</strong>
+          🎯 Paquete seleccionado: <strong>{selectedPack.name}</strong> ({selectedPack.count} roscos)
         </p>
       )}
+
+      <ContentPackPicker domain="rosco" open={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={choosePack} />
     </section>
   );
 }

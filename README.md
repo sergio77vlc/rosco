@@ -11,7 +11,7 @@ Plataforma web de **juegos educativos multijugador**, pensada para jugar con ami
 - La partida arranca automáticamente en cuanto se llena el aforo de jugadores, sin esperar a que el anfitrión pulse nada (también se puede empezar antes manualmente).
 - Interruptor **"Usar dispositivo en modo TV"** en la configuración de hospedar: por defecto está desactivado y el anfitrión juega también como uno más (configura su nombre y avatar, y su pantalla pasa a mostrar su propio rosco en cuanto empieza la partida). Si se activa, el dispositivo que hospeda pasa a ser solo un panel espectador que muestra todos los roscos en directo, como un marcador de TV, sin jugar.
 - **Pila de preguntas en vivo (cultura general)**: en vez de roscos fijos de 25 preguntas, el servidor mantiene una pila de más de 600 preguntas por nivel (normal y difícil), organizadas por letra. Cada partida extrae al vuelo una pregunta distinta por letra y por jugador, sin repetir ninguna dentro de la misma partida; además, la pila recuerda qué preguntas ha usado recientemente (mientras el servidor siga encendido) para tardar lo máximo posible en repetir una pregunta entre partidas sucesivas — solo vuelve a ofrecer una ya usada cuando se ha agotado toda la pila de esa letra. El selector solo pide elegir el **nivel de dificultad** (normal o difícil); de momento el contenido es solo de cultura general.
-- Generación de roscos completos mediante prompt con IA (API de Anthropic/Claude), a partir de un tema y una dificultad.
+- **Paquetes de contenido con IA, guardados en el servidor**: en la configuración de cada juego, un botón "📦 Elegir o crear un... guardado con IA" abre una ventana con buscador, filtro por dificultad y la lista de paquetes ya creados (roscos completos en Pasapalabra, tandas de preguntas tipo test en Quiz y Batalla). Desde la misma ventana se puede generar un paquete nuevo con la API de Anthropic/Claude a partir de un tema y una dificultad. Los paquetes se guardan en disco (`server/data/`) y **sobreviven a un reinicio del servidor**; siguen conviviendo con el modo rápido de cultura general (pilas en vivo, sin necesidad de IA). La pantalla principal de cada juego muestra cuántos roscos/preguntas hay ya guardados en total, repartidos entre los distintos paquetes creados.
 - **Perfil de jugador**: la foto o el avatar tienen todo el protagonismo (vista previa grande, sin colores de fondo — todos los jugadores comparten el mismo estilo neutro/transparente). El botón para hacerse una foto con la cámara es el principal; la lista de emojis para elegir avatar se abre en una burbuja aparte. El avatar aparece en el centro de su rosco y junto a su nombre en todas las pantallas.
 - **Turnos y roscos individuales en todos los modos**: cada jugador de una partida juega su propio rosco, extraído de la pila viva con preguntas distintas a las de los demás pero de la misma dificultad. Solo un jugador tiene el turno a la vez: si acierta, lo conserva; si falla o pasa palabra, el turno pasa automáticamente al siguiente jugador. Esto aplica igual en partidas en red (varios móviles) que en el modo local (un solo dispositivo).
 - Cada jugador juega desde su móvil: ve su propio rosco (con su avatar en el centro), la letra activa en grande —con una etiqueta que deja claro si la respuesta **empieza por** esa letra o la **contiene**— y puede responder o pasar (pasapalabra) solo cuando es su turno. **Mientras espera su turno no puede ver su propia siguiente pregunta**: la pantalla pasa a modo espectador y muestra en su lugar el rosco del jugador que está jugando en ese momento (su rueda, su letra y su pista), para poder seguir la partida sin adelantar nada de la suya. La pantalla de juego está pensada para verse entera de un vistazo en un móvil, sin necesidad de hacer scroll: rueda, turno, aciertos, fallos, cronómetro, pista y botones caben siempre en pantalla.
@@ -27,7 +27,7 @@ Plataforma web de **juegos educativos multijugador**, pensada para jugar con ami
 
 ### Quiz (`/quiz`) — estilo Kahoot/Quizizz
 
-- Preguntas de cultura general con **4 opciones** (dos bancos de +100 preguntas cada uno, dificultad normal y difícil, más una opción "mixta" que combina ambas), extraídas sin repetir de una pila viva igual que en Pasapalabra.
+- Preguntas de cultura general con **4 opciones** (dos bancos de +100 preguntas cada uno, dificultad normal y difícil, más una opción "mixta" que combina ambas), extraídas sin repetir de una pila viva igual que en Pasapalabra — o, si el anfitrión elige un paquete guardado/generado con IA, extraídas de ese paquete en su lugar.
 - Todos los jugadores responden **a la misma pregunta a la vez**, contra un cronómetro configurable (10-60s por pregunta) y visible en grande.
 - La puntuación premia acertar rápido: entre 500 y 1000 puntos por acierto según la rapidez, 0 si se falla o no se responde a tiempo. La pregunta se resuelve en cuanto responden todos los jugadores conectados, o al agotarse el tiempo.
 - Tras cada pregunta hay una breve fase de **revelado**: se ilumina la opción correcta y se marca en rojo la opción elegida si era incorrecta. La partida avanza sola a la siguiente pregunta tras unos segundos.
@@ -37,7 +37,7 @@ Plataforma web de **juegos educativos multijugador**, pensada para jugar con ami
 
 ### Batalla (`/battle`) — combate por turnos con preguntas y armas
 
-- Cada jugador tiene 100 puntos de vida. Por turnos, responde una pregunta de cultura general (4 opciones, igual que en Quiz); si acierta, elige **a quién atacar** (si hay más de un rival vivo) y **con qué arma** (🍅 tomate, 🍌 piel de plátano, 🥧 tarta de nata, 💣 bomba o ⚒️ yunque, cada una con distinto daño). Si falla o se acaba el tiempo, no pasa nada y el turno pasa al siguiente jugador. Gana el último que queda con vida.
+- Cada jugador tiene 100 puntos de vida. Por turnos, responde una pregunta de cultura general o de un paquete guardado/generado con IA (4 opciones, igual que en Quiz); si acierta, elige **a quién atacar** (si hay más de un rival vivo) y **con qué arma** (🍅 tomate, 🍌 piel de plátano, 🥧 tarta de nata, 💣 bomba o ⚒️ yunque, cada una con distinto daño). Si falla o se acaba el tiempo, no pasa nada y el turno pasa al siguiente jugador. Gana el último que queda con vida.
 - **Personaje tipo Mii**: en vez de elegir un avatar de una lista, cada jugador crea su propio personaje desde una burbuja de edición — peinado (5 estilos), color de pelo, tipo de ropa (camiseta, sudadera, vestido o traje) y su color, todo dibujado en SVG. También se puede **poner la propia foto en la cara del personaje** con la cámara del móvil (o dejar la cara de dibujo por defecto).
 - Menú igual que el de Pasapalabra: **hospedar partida**, **unirse escaneando un QR**, o **jugar en el mismo dispositivo** (modo local, sin red) — con **mínimo 2 jugadores en todos los modos**.
 - Configuración del anfitrión: nº máximo de jugadores (2-6) y dificultad de las preguntas. Mismo interruptor **"Usar dispositivo en modo TV"** que en los otros juegos (por defecto desactivado: el anfitrión es un jugador más).
@@ -178,22 +178,30 @@ sudo ufw enable
 
 Abre `https://tudominio.es` — deberías ver el candado de "conexión segura". A partir de aquí, el QR generado en la sala de espera ya apuntará a esa URL HTTPS automáticamente, y tanto la cámara (escanear QR) como el micrófono (responder por voz) pedirán permiso y funcionarán con normalidad.
 
-## Generación de roscos con IA
+## Paquetes de contenido con IA
 
-Para habilitar la creación de roscos completos a partir de un prompt, define la variable de entorno `ANTHROPIC_API_KEY` en el entorno donde corre `server`:
+Para habilitar la creación de paquetes (roscos completos en Pasapalabra, tandas de preguntas en Quiz y Batalla) a partir de un prompt, define la variable de entorno `ANTHROPIC_API_KEY` en el entorno donde corre `server`:
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-... npm start
 ```
 
-Si no está configurada, el resto de la aplicación funciona con normalidad; solo la pestaña "Generar con IA" del formulario de configuración de partida mostrará un mensaje explicando que falta la clave, y el anfitrión podrá seguir usando los roscos predefinidos.
+Si no está configurada, el resto de la aplicación funciona con normalidad: el selector de "📦 Elegir o crear... guardado con IA" sigue mostrando y permitiendo usar los paquetes ya creados anteriormente, pero al intentar generar uno nuevo se muestra un mensaje explicando que falta la clave, y el anfitrión puede seguir usando el modo rápido de cultura general.
+
+Los paquetes generados se guardan como JSON en `server/data/` (`rosco-packs.json`, `quiz-packs.json`, `battle-packs.json`), fuera de `dist/`, por lo que **sobreviven a recompilaciones y reinicios del servidor**. Ese directorio no se sube al repositorio (está en `.gitignore`): cada despliegue acumula su propio contenido generado.
+
+API REST para gestionar paquetes (usada internamente por `ContentPackPicker`, pero también válida para integraciones externas):
+
+- `GET /api/packs/:domain` — lista los paquetes de un dominio (`rosco` | `quiz` | `battle`) en formato resumido (`id`, `name`, `difficulty`, `createdAt`, `count`).
+- `GET /api/packs/:domain/:id` — devuelve un paquete completo, con todos sus roscos o preguntas.
+- `POST /api/packs/:domain/generate` — genera un paquete nuevo con IA a partir de `{ theme, difficulty }`, lo guarda y lo devuelve.
 
 Variables de entorno opcionales:
 
 - `PORT` — puerto del servidor (por defecto `4000`).
 - `HOST` — interfaz de red en la que escucha (por defecto `0.0.0.0`); usa `127.0.0.1` cuando pongas Nginx delante como proxy inverso.
-- `ANTHROPIC_API_KEY` — habilita la generación de roscos por IA.
-- `ROSCO_AI_MODEL` — modelo de Anthropic a usar (por defecto `claude-sonnet-5`).
+- `ANTHROPIC_API_KEY` — habilita la generación de paquetes de contenido por IA.
+- `ROSCO_AI_MODEL` — modelo de Anthropic a usar, tanto para roscos como para preguntas (por defecto `claude-sonnet-5`).
 
 ## Estructura del proyecto
 
@@ -201,11 +209,16 @@ Variables de entorno opcionales:
 shared/src/types.ts         Tipos compartidos (Rosco, Room, Player, eventos de Socket.IO...)
 shared/src/roscoLetters.ts  Alfabeto del rosco (25 letras) y reglas de "empieza por" / "contiene"
 shared/src/answerCheck.ts   Normalización y comparación de respuestas
+shared/src/packs.ts         Tipos de los paquetes de contenido con IA (RoscoPack, QuizPack, PackSummary...)
 
 server/src/roscos/bank.ts            Tipo QuestionBank y validador buildQuestionBank() (reglas de letra, sin duplicados)
 server/src/roscos/pool.ts            drawRoscos(): extrae roscos de la pila viva sin repetir preguntas dentro de la partida, con colas barajadas por letra que minimizan la repetición entre partidas sucesivas
 server/src/roscos/data/*.ts          Pilas de preguntas de cultura general (normal y difícil), +600 preguntas cada una, organizadas por letra
-server/src/ai/generateRosco.ts Generación de roscos con la API de Anthropic
+server/src/ai/generateRosco.ts Generación de roscos con la API de Anthropic: uno solo (generateRoscoWithAI) o un paquete de varios sobre el mismo tema (generateRoscoPack)
+server/src/ai/generateQuizPack.ts Generación de un paquete de preguntas tipo test con la API de Anthropic (usado por Quiz y Batalla)
+server/src/packs/store.ts        Lectura/escritura de los paquetes en server/data/*.json
+server/src/packs/repository.ts   PackRepository<T>: caché en memoria respaldada en disco, se carga una vez al arrancar
+server/src/packs/repositories.ts Instancias únicas del repositorio por dominio (roscoPackRepo, quizPackRepo, battlePackRepo)
 server/src/gameEngine.ts      Motor del juego: turnos, pasapalabra, corrección, ranking
 server/src/socketHandlers.ts  Eventos de Socket.IO (host y jugadores)
 server/src/rooms.ts           Estado de las salas en memoria
@@ -235,7 +248,9 @@ client/src/components/QuizLiveRanking.tsx    Ranking en vivo siempre visible (pa
 client/src/components/RoscoWheel.tsx  Rueda del rosco (SVG), con el avatar del jugador en el centro
 client/src/components/RoscoPlayer.tsx Panel de juego compacto (sin scroll) reutilizado por el modo en red y el modo local
 client/src/components/Presenter.tsx   Presentadora animada (SVG): expresiones y boca sincronizada con el TTS del dashboard del anfitrión
-client/src/components/RoscoPicker.tsx Selector de rosco: nivel de dificultad (predefinido, extraído de la pila viva) o generación con IA
+client/src/components/RoscoPicker.tsx Selector de rosco: modo rápido por dificultad (pila viva) o paquete guardado/generado con IA (vía ContentPackPicker)
+client/src/components/ContentPackPicker.tsx Ventana reutilizable (Pasapalabra/Quiz/Batalla): buscador, filtro por dificultad, lista de paquetes guardados y generación de uno nuevo con IA
+client/src/hooks/usePackContentCount.ts Suma el nº de roscos/preguntas guardados en todos los paquetes de un dominio, para mostrarlo en la pantalla de inicio de cada juego
 client/src/components/AvatarPicker.tsx Selector de avatar: lista de emojis o foto con la cámara
 client/src/components/AvatarView.tsx  Renderiza un avatar (emoji o foto) de forma consistente en toda la app
 client/src/hooks/useSpeechSynthesis.ts   Lectura de la pista en voz alta (TTS), velocidad ajustable

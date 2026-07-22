@@ -34,6 +34,8 @@ import {
   toPublicBattleRoom,
 } from './battle/engine.js';
 import { drawQuizQuestions } from './quiz/pool.js';
+import { battlePackRepo } from './packs/repositories.js';
+import type { QuizQuestion } from '@rosco/shared';
 import type { ServerBattleRoom } from './battle/roomTypes.js';
 
 const MIN_PLAYERS = 2;
@@ -62,6 +64,25 @@ function sanitizeMii(input: unknown): MiiConfig {
   };
 }
 
+function shuffledIndices(size: number): number[] {
+  const arr = Array.from({ length: size }, (_, i) => i);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/** Extrae la siguiente pregunta del paquete de la sala, sin repetir hasta agotarlo (se rebaraja entonces). */
+function drawFromPackQueue(room: ServerBattleRoom): QuizQuestion {
+  const questions = room.packQuestions!;
+  if (room.packDrawQueue.length === 0) {
+    room.packDrawQueue = shuffledIndices(questions.length);
+  }
+  const idx = room.packDrawQueue.pop()!;
+  return questions[idx];
+}
+
 function broadcastBattleRoomState(io: Server, room: ServerBattleRoom): void {
   io.to(room.code).emit('battle:roomState', toPublicBattleRoom(room));
 }
@@ -86,7 +107,7 @@ function finishBattle(io: Server, room: ServerBattleRoom): void {
 }
 
 function beginQuestion(io: Server, room: ServerBattleRoom): void {
-  const [question] = drawQuizQuestions(room.difficulty, 1);
+  const question = room.packQuestions ? drawFromPackQueue(room) : drawQuizQuestions(room.difficulty, 1)[0];
   room.currentQuestion = question ?? null;
   room.status = 'question';
   room.questionEndsAt = Date.now() + QUESTION_DURATION_SECONDS * 1000;
@@ -147,6 +168,17 @@ export function registerBattleSocketHandlers(io: Server, socket: Socket): void {
         return;
       }
       const maxPlayers = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, Math.floor(payload.maxPlayers)));
+      let packQuestions: ServerBattleRoom['packQuestions'] = null;
+      let difficulty = payload.difficulty;
+      if (payload.packId) {
+        const pack = battlePackRepo.get(payload.packId);
+        if (!pack) {
+          ack?.({ ok: false, reason: 'El paquete de preguntas ya no existe.' });
+          return;
+        }
+        packQuestions = pack.questions;
+        difficulty = pack.difficulty;
+      }
       const code = createBattleRoomCode();
       const hostToken = nanoid();
       const room: ServerBattleRoom = {
@@ -156,7 +188,9 @@ export function registerBattleSocketHandlers(io: Server, socket: Socket): void {
         hostConnected: true,
         status: 'lobby',
         maxPlayers,
-        difficulty: payload.difficulty,
+        difficulty,
+        packQuestions,
+        packDrawQueue: [],
         players: new Map(),
         turnOrder: [],
         eliminationOrder: [],

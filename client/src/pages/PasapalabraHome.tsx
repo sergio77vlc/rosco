@@ -1,8 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePackContentCount } from '../hooks/usePackContentCount';
 
 export default function PasapalabraHome() {
   const navigate = useNavigate();
+  const { itemCount, packCount } = usePackContentCount('rosco');
   return (
     <div className="screen screen-center">
       <button className="back-to-hub-link" onClick={() => navigate('/')}>
@@ -10,6 +12,11 @@ export default function PasapalabraHome() {
       </button>
       <h1 className="app-title">🎯 Pasapalabra</h1>
       <p className="app-subtitle">El clásico juego de Pasapalabra, con tus amigos y sus móviles.</p>
+      {packCount > 0 && (
+        <p className="home-content-count">
+          📦 {itemCount} roscos guardados en {packCount} {packCount === 1 ? 'paquete' : 'paquetes'} creados con IA
+        </p>
+      )}
       <div className="home-actions">
         <button type="button" className="action-card action-card-host" onClick={() => navigate('/host')}>
           <span className="action-card-icon">🎬</span>

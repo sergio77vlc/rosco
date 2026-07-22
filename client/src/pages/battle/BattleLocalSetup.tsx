@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DEFAULT_MII_CONFIG, type MiiConfig, type QuizDifficulty, type QuizQuestion } from '@rosco/shared';
+import { DEFAULT_MII_CONFIG, type MiiConfig, type PackSummary, type QuizDifficulty, type QuizQuestion } from '@rosco/shared';
 import MiiAvatar from '../../components/MiiAvatar';
 import MiiEditor from '../../components/MiiEditor';
+import ContentPackPicker from '../../components/ContentPackPicker';
 import { QUIZ_DIFFICULTY_ICONS, QUIZ_DIFFICULTY_LABELS } from '../../constants';
 import { useLocalBattle } from '../../context/BattleLocalContext';
 
@@ -28,6 +29,8 @@ export default function BattleLocalSetup() {
   const [miis, setMiis] = useState<MiiConfig[]>(() => defaultMiis(2));
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [difficulty, setDifficulty] = useState<QuizDifficulty>('medio');
+  const [packPickerOpen, setPackPickerOpen] = useState(false);
+  const [selectedPack, setSelectedPack] = useState<PackSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
 
@@ -50,14 +53,22 @@ export default function BattleLocalSetup() {
     setError(null);
     setStarting(true);
     try {
-      const res = await fetch('/api/quiz/draw', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ difficulty, count: QUESTION_POOL_SIZE }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudieron repartir las preguntas.');
-      const questionPool: QuizQuestion[] = data.questions;
+      let questionPool: QuizQuestion[];
+      if (selectedPack) {
+        const res = await fetch(`/api/packs/battle/${selectedPack.id}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'No se pudo cargar el paquete de preguntas.');
+        questionPool = data.pack.questions;
+      } else {
+        const res = await fetch('/api/quiz/draw', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ difficulty, count: QUESTION_POOL_SIZE }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'No se pudieron repartir las preguntas.');
+        questionPool = data.questions;
+      }
       const players = names.map((name, i) => ({ name: name.trim() || `Jugador ${i + 1}`, mii: miis[i] }));
       startGame(questionPool, players);
       navigate('/battle/local/play');
@@ -123,18 +134,40 @@ export default function BattleLocalSetup() {
       </section>
 
       <section className="setup-section">
-        <h2>Dificultad de las preguntas</h2>
+        <h2>Preguntas</h2>
+        <p className="preset-picker-hint">Modo rápido: elige la dificultad de cultura general.</p>
         <div className="pill-row">
           {DIFFICULTY_OPTIONS.map((d) => (
             <button
               key={d}
-              className={`pill ${difficulty === d ? 'pill-active' : ''}`}
-              onClick={() => setDifficulty(d)}
+              className={`pill ${!selectedPack && difficulty === d ? 'pill-active' : ''}`}
+              onClick={() => {
+                setDifficulty(d);
+                setSelectedPack(null);
+              }}
             >
               {QUIZ_DIFFICULTY_ICONS[d]} {QUIZ_DIFFICULTY_LABELS[d]}
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          className="btn btn-secondary pack-picker-open-btn"
+          onClick={() => setPackPickerOpen(true)}
+        >
+          📦 Elegir o crear un paquete guardado con IA
+        </button>
+        {selectedPack && (
+          <p className="setup-selected pack-selected">
+            🎯 Paquete seleccionado: <strong>{selectedPack.name}</strong> ({selectedPack.count} preguntas)
+          </p>
+        )}
+        <ContentPackPicker
+          domain="battle"
+          open={packPickerOpen}
+          onClose={() => setPackPickerOpen(false)}
+          onSelect={setSelectedPack}
+        />
       </section>
 
       {error && <p className="error-text">{error}</p>}
