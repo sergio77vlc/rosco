@@ -27,6 +27,14 @@ const GAMES: GameEntry[] = [
     path: '/quiz',
     githubUrl: 'https://github.com/sergio77vlc/socialquizz',
   },
+  {
+    id: 'battle',
+    name: 'Batalla',
+    icon: '⚔️',
+    description: 'Crea tu personaje y responde preguntas para elegir un arma y atacar a tus rivales. ¡El último en pie gana!',
+    path: '/battle',
+    githubUrl: 'https://github.com/sergio77vlc/socialquizz',
+  },
 ];
 
 export default function GamesHub() {

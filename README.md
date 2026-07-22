@@ -1,12 +1,12 @@
 # SocialQuizz
 
-Plataforma web de **juegos educativos multijugador**, pensada para jugar con amigos, familia o en clase. Incluye un juego tipo "Pasapalabra" (rosco) y un quiz de cultura general estilo Kahoot/Quizizz, con más juegos previstos a futuro. Un dispositivo hospeda la partida y la muestra en tiempo real; cada jugador juega desde su propio móvil, uniéndose escaneando un código QR o introduciendo un código de sala.
+Plataforma web de **juegos educativos multijugador**, pensada para jugar con amigos, familia o en clase. Incluye un juego tipo "Pasapalabra" (rosco), un quiz de cultura general estilo Kahoot/Quizizz y una batalla por turnos a base de preguntas, con más juegos previstos a futuro. Un dispositivo hospeda la partida y la muestra en tiempo real; cada jugador juega desde su propio móvil, uniéndose escaneando un código QR o introduciendo un código de sala.
 
 ## Funcionalidades
 
 - **Página de inicio (`/`)**: una sala de juegos con una tarjeta por cada juego disponible, con un botón para **jugar** y otro que enlaza a su **repositorio de GitHub**. Preparada para añadir más juegos: cada uno se registra en `client/src/pages/GamesHub.tsx` con su propia tarjeta.
 - Pantalla de inicio de Pasapalabra (`/pasapalabra`): **hospedar partida**, **unirse escaneando un QR**, o **jugar en el mismo dispositivo** (modo local, sin red). La pantalla de "unirse" activa la cámara sola nada más entrar, mostrando un visor cuadrado listo para leer el QR sin tener que pulsar nada antes; si no hay cámara disponible, siempre se puede introducir el código de sala a mano.
-- **Reconexión automática** (Pasapalabra y Quiz): si a un jugador se le corta la red o recarga la página sin querer, su navegador recupera solo su sesión (guardada en el propio dispositivo) y vuelve exactamente a la partida en la que estaba, sin tener que volver a introducir su nombre. El anfitrión tiene además un margen de 45 segundos para reconectar tras desconectarse (recarga de página, corte de red) antes de que la partida se dé por finalizada; si el anfitrión juega también como jugador, recupera ambos roles a la vez.
+- **Reconexión automática** (en los tres juegos en red): si a un jugador se le corta la red o recarga la página sin querer, su navegador recupera solo su sesión (guardada en el propio dispositivo) y vuelve exactamente a la partida en la que estaba, sin tener que volver a introducir su nombre. El anfitrión tiene además un margen de 45 segundos para reconectar tras desconectarse (recarga de página, corte de red) antes de que la partida se dé por finalizada; si el anfitrión juega también como jugador, recupera ambos roles a la vez.
 - Configuración del anfitrión: número de jugadores (2-6), duración del cronómetro y elección del rosco. Para jugar solo (1 jugador) se usa el modo "Jugar en este dispositivo", no hospedar.
 - La partida arranca automáticamente en cuanto se llena el aforo de jugadores, sin esperar a que el anfitrión pulse nada (también se puede empezar antes manualmente).
 - Interruptor **"Usar dispositivo en modo TV"** en la configuración de hospedar: por defecto está desactivado y el anfitrión juega también como uno más (configura su nombre y avatar, y su pantalla pasa a mostrar su propio rosco en cuanto empieza la partida). Si se activa, el dispositivo que hospeda pasa a ser solo un panel espectador que muestra todos los roscos en directo, como un marcador de TV, sin jugar.
@@ -34,6 +34,15 @@ Plataforma web de **juegos educativos multijugador**, pensada para jugar con ami
 - **Ranking en vivo siempre visible**: tanto en el dashboard del anfitrión (panel lateral) como en la pantalla de cada jugador (franja compacta arriba de la pregunta) se ve en todo momento la clasificación actual por puntos, no solo al terminar la partida; tras cada revelado se ve además cuántos puntos acaba de ganar cada uno.
 - Configuración del anfitrión: nº máximo de jugadores (mínimo 2), dificultad, nº de preguntas (5-20) y duración de cada una. Igual que en Pasapalabra, el interruptor **"Usar dispositivo en modo TV"** decide si el anfitrión juega también o solo hace de panel/marcador; por defecto está desactivado (el anfitrión es un jugador más y no se muestra ningún panel de monitorización en ningún dispositivo).
 - Al terminar, podio con los 3 primeros puestos y ranking completo por puntos y aciertos.
+
+### Batalla (`/battle`) — combate por turnos con preguntas y armas
+
+- Cada jugador tiene 100 puntos de vida. Por turnos, responde una pregunta de cultura general (4 opciones, igual que en Quiz); si acierta, elige **a quién atacar** (si hay más de un rival vivo) y **con qué arma** (🍅 tomate, 🍌 piel de plátano, 🥧 tarta de nata, 💣 bomba o ⚒️ yunque, cada una con distinto daño). Si falla o se acaba el tiempo, no pasa nada y el turno pasa al siguiente jugador. Gana el último que queda con vida.
+- **Personaje tipo Mii**: en vez de elegir un avatar de una lista, cada jugador crea su propio personaje desde una burbuja de edición — peinado (5 estilos), color de pelo, tipo de ropa (camiseta, sudadera, vestido o traje) y su color, todo dibujado en SVG. También se puede **poner la propia foto en la cara del personaje** con la cámara del móvil (o dejar la cara de dibujo por defecto).
+- Menú igual que el de Pasapalabra: **hospedar partida**, **unirse escaneando un QR**, o **jugar en el mismo dispositivo** (modo local, sin red) — con **mínimo 2 jugadores en todos los modos**.
+- Configuración del anfitrión: nº máximo de jugadores (2-6) y dificultad de las preguntas. Mismo interruptor **"Usar dispositivo en modo TV"** que en los otros juegos (por defecto desactivado: el anfitrión es un jugador más).
+- El dashboard del anfitrión y la pantalla de cada jugador muestran en todo momento la vida de todos los combatientes (con avatar Mii y barra de vida), quién tiene el turno, la pregunta activa y, tras cada revelado, el resultado del ataque ("🍅 Ana atacó a Luis con tomate: -15 HP").
+- Al terminar, podio con el ganador y el resto de jugadores en el orden en que fueron cayendo.
 
 ## Arquitectura
 
@@ -235,6 +244,20 @@ client/src/hooks/useRoomReconnect.ts   Reengancha la sesión guardada (anfitrió
 client/src/utils/session.ts            Guarda/lee en localStorage la credencial de reconexión (hostToken y/o playerId) por sala
 shared/src/roscoProgress.ts    Motor de turnos: avanzar letra (resolver acierto/fallo/pasapalabra) y turno entre jugadores (nextActivePlayerId), usado por el servidor y por el modo local del cliente
 shared/src/roscoAssignment.ts  assignRoscos(): reparte los roscos de un pool entre los jugadores de una partida
+
+shared/src/battle.ts             Tipos del Mii (pelo, ropa, foto) y de Batalla (armas, vida, sala, eventos de Socket.IO)
+server/src/battle/roomTypes.ts   Estado de una sala de batalla (jugadores, vida, orden de turno, arma/objetivo pendiente...)
+server/src/battle/engine.ts      Turno entre jugadores vivos, aplicar ataque (daño, eliminación) y ranking final
+server/src/battle/rooms.ts       Estado de las salas de batalla en memoria
+server/src/battleSocketHandlers.ts Eventos de Socket.IO de Batalla: pregunta → (acierto) elegir objetivo/arma → revelado → siguiente turno
+client/src/components/MiiAvatar.tsx  Dibuja el personaje Mii en SVG (pelo, ropa, cara por defecto o foto recortada)
+client/src/components/MiiEditor.tsx  Burbuja para personalizar el Mii: cámara para la foto, peinados, colores y tipos de ropa
+client/src/components/HpBar.tsx      Barra de vida
+client/src/components/BattlePlayerCard.tsx Tarjeta de jugador (Mii + nombre + vida), usada en el lobby, el combate y para elegir objetivo
+client/src/components/BattlePodium.tsx     Podio final de Batalla (reutiliza los estilos del podio de Quiz)
+client/src/context/BattleContext.tsx       Estado de red de Batalla (sala, ranking final, jugador), vía Socket.IO
+client/src/context/BattleLocalContext.tsx  Estado del modo local de Batalla (turnos, vida, ataques), sin red
+client/src/pages/battle/*                  Páginas de Batalla: inicio, anfitrión (config/lobby/combate/resultados), unirse y modo local
 ```
 
 ## Notas y limitaciones conocidas

@@ -802,6 +802,90 @@ button {
   background: rgba(250, 204, 21, 0.15);
 }
 
+.mii-avatar-svg {
+  display: block;
+}
+
+.mii-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.mii-picker-preview {
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.4));
+}
+
+.mii-picker-open-btn {
+  font-size: 1.05rem;
+  padding: 14px 22px;
+}
+
+.mii-editor-modal {
+  max-width: 380px;
+  align-items: center;
+  text-align: center;
+}
+
+.mii-editor-preview {
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.4));
+}
+
+.mii-editor-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mii-editor-label {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  align-self: flex-start;
+}
+
+.mii-editor-face-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.mii-editor-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.mii-editor-swatches {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.mii-swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+}
+
+.mii-swatch-active {
+  border-color: #fff;
+  transform: scale(1.12);
+}
+
 .camera-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1894,4 +1978,196 @@ button {
   .quiz-option-tile {
     min-height: 76px;
   }
+}
+
+/* ==========================================================================
+   Batalla
+   ========================================================================== */
+
+.battle-host-screen,
+.battle-player-screen {
+  padding-top: 12px;
+  gap: 10px;
+}
+
+.battle-lobby-players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  width: 100%;
+  max-width: 420px;
+}
+
+.battle-lobby-player-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.battle-players-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  width: 100%;
+  max-width: 640px;
+}
+
+.battle-players-row-compact {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  justify-content: flex-start;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.battle-player-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--card);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 8px 10px;
+  flex-shrink: 0;
+  font-family: inherit;
+  cursor: default;
+}
+
+button.battle-player-card {
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+button.battle-player-card:active {
+  transform: scale(0.96);
+}
+
+.battle-player-card-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.2);
+}
+
+.battle-player-card-target:hover {
+  border-color: var(--red);
+}
+
+.battle-player-card-defeated {
+  opacity: 0.4;
+}
+
+.battle-player-card-compact {
+  padding: 5px 6px;
+}
+
+.battle-player-card-compact .hp-bar {
+  width: 46px;
+}
+
+.battle-player-card-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hp-bar {
+  position: relative;
+  width: 64px;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.hp-bar-fill {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.hp-bar-fill-high {
+  background: var(--green);
+}
+
+.hp-bar-fill-mid {
+  background: var(--accent);
+}
+
+.hp-bar-fill-low {
+  background: var(--red);
+}
+
+.hp-bar-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.battle-status-message {
+  font-weight: 700;
+  text-align: center;
+  margin: 4px 0;
+}
+
+.battle-target-picker,
+.battle-weapon-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.battle-weapon-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.battle-weapon-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border-radius: 16px;
+  border: 2px solid rgba(139, 92, 246, 0.35);
+  background: linear-gradient(160deg, rgba(139, 92, 246, 0.18), var(--card));
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.battle-weapon-tile:active {
+  transform: scale(0.94);
+}
+
+.battle-weapon-tile:hover {
+  border-color: var(--accent);
+}
+
+.battle-weapon-icon {
+  font-size: 1.8rem;
+}
+
+.battle-weapon-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
 }

@@ -5,14 +5,18 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
-import type { Difficulty } from '@rosco/shared';
+import type { Difficulty, QuizDifficulty } from '@rosco/shared';
 import { drawRoscos } from './roscos/pool.js';
+import { drawQuizQuestions } from './quiz/pool.js';
 import { generateRoscoWithAI, RoscoGenerationError } from './ai/generateRosco.js';
 import { registerSocketHandlers } from './socketHandlers.js';
 import { registerQuizSocketHandlers } from './quizSocketHandlers.js';
+import { registerBattleSocketHandlers } from './battleSocketHandlers.js';
 
 const VALID_DIFFICULTIES: Difficulty[] = ['medio', 'dificil'];
 const MAX_DRAW_COUNT = 6;
+const VALID_QUIZ_DIFFICULTIES: QuizDifficulty[] = ['medio', 'dificil', 'mixto'];
+const MAX_QUIZ_DRAW_COUNT = 150;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 4000;
@@ -36,6 +40,20 @@ app.post('/api/rosco/draw', (req, res) => {
     return;
   }
   res.json({ roscos: drawRoscos(difficulty as Difficulty, n) });
+});
+
+app.post('/api/quiz/draw', (req, res) => {
+  const { difficulty, count } = req.body ?? {};
+  if (!VALID_QUIZ_DIFFICULTIES.includes(difficulty)) {
+    res.status(400).json({ error: 'Petición inválida: "difficulty" no es válida.' });
+    return;
+  }
+  const n = Math.floor(Number(count));
+  if (!Number.isFinite(n) || n < 1 || n > MAX_QUIZ_DRAW_COUNT) {
+    res.status(400).json({ error: `"count" debe ser un número entre 1 y ${MAX_QUIZ_DRAW_COUNT}.` });
+    return;
+  }
+  res.json({ questions: drawQuizQuestions(difficulty as QuizDifficulty, n) });
 });
 
 app.post('/api/rosco/generate', async (req, res) => {
@@ -76,6 +94,7 @@ const io = new Server(httpServer, {
 io.on('connection', (socket) => {
   registerSocketHandlers(io, socket);
   registerQuizSocketHandlers(io, socket);
+  registerBattleSocketHandlers(io, socket);
 });
 
 httpServer.listen(PORT, HOST, () => {
